@@ -1,0 +1,91 @@
+import AppKit
+import ApplicationServices
+import PanePilotCore
+
+struct ManagedWindow {
+    var element: AXUIElement
+    var rect: CGRect
+}
+
+final class AccessibilityWindowClient {
+    private let systemWide = AXUIElementCreateSystemWide()
+
+    func isTrusted(prompt: Bool) -> Bool {
+        let key = "AXTrustedCheckOptionPrompt"
+        return AXIsProcessTrustedWithOptions([key: prompt] as CFDictionary)
+    }
+
+    func focusedWindow() -> ManagedWindow? {
+        var value: CFTypeRef?
+        let status = AXUIElementCopyAttributeValue(systemWide, kAXFocusedWindowAttribute as CFString, &value)
+        guard status == .success, let element = value else {
+            return nil
+        }
+        let window = element as! AXUIElement
+        guard let rect = rect(for: window) else {
+            return nil
+        }
+        return ManagedWindow(element: window, rect: rect)
+    }
+
+    func rect(for window: ManagedWindow) -> CGRect? {
+        rect(for: window.element)
+    }
+
+    func displays() -> [DisplayFrame] {
+        NSScreen.screens
+            .sorted { $0.frame.minX == $1.frame.minX ? $0.frame.minY > $1.frame.minY : $0.frame.minX < $1.frame.minX }
+            .enumerated()
+            .map { index, screen in
+                DisplayFrame(id: screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")].map(String.init(describing:)) ?? "\(index)", visibleFrame: axFrame(fromCocoaFrame: screen.visibleFrame))
+            }
+    }
+
+    func activeDisplayID(for rect: CGRect) -> String? {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        return displays().first(where: { $0.visibleFrame.contains(center) })?.id
+    }
+
+    func set(_ rect: CGRect, for window: ManagedWindow) -> Bool {
+        var origin = rect.origin
+        var size = rect.size
+        guard
+            let position = AXValueCreate(.cgPoint, &origin),
+            let axSize = AXValueCreate(.cgSize, &size)
+        else {
+            return false
+        }
+        let positionStatus = AXUIElementSetAttributeValue(window.element, kAXPositionAttribute as CFString, position)
+        let sizeStatus = AXUIElementSetAttributeValue(window.element, kAXSizeAttribute as CFString, axSize)
+        return positionStatus == .success && sizeStatus == .success
+    }
+
+    private func rect(for element: AXUIElement) -> CGRect? {
+        var positionRef: CFTypeRef?
+        var sizeRef: CFTypeRef?
+        guard
+            AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &positionRef) == .success,
+            AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeRef) == .success,
+            let positionRef,
+            let sizeRef
+        else {
+            return nil
+        }
+
+        var origin = CGPoint.zero
+        var size = CGSize.zero
+        AXValueGetValue(positionRef as! AXValue, .cgPoint, &origin)
+        AXValueGetValue(sizeRef as! AXValue, .cgSize, &size)
+        return CGRect(origin: origin, size: size)
+    }
+
+    private func axFrame(fromCocoaFrame frame: CGRect) -> CGRect {
+        let desktop = NSScreen.screens.reduce(CGRect.null) { $0.union($1.frame) }
+        return CGRect(
+            x: frame.minX,
+            y: desktop.maxY - frame.maxY,
+            width: frame.width,
+            height: frame.height
+        )
+    }
+}
