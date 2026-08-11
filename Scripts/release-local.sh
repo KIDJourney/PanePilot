@@ -8,6 +8,12 @@ Usage:
 
 Environment:
   CODESIGN_IDENTITY             Optional. Developer ID Application identity SHA or name.
+  DEVELOPER_ID_APPLICATION_CERT_PATH
+                                 Optional. Local Developer ID .p12 path.
+  DEVELOPER_ID_APPLICATION_CERT_PASSWORD
+                                 Optional. Password for the local Developer ID .p12.
+  DEVELOPER_ID_APPLICATION_CERT_PASSWORD_FILE
+                                 Optional. File containing the .p12 password.
   NOTARY_PROFILE                Optional. notarytool keychain profile name.
   APPLE_ID                      Required when NOTARY_PROFILE is not set.
   APPLE_APP_SPECIFIC_PASSWORD   Required when NOTARY_PROFILE is not set.
@@ -32,6 +38,29 @@ log() {
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || fail "missing command: $1"
 }
+
+TEMP_KEYCHAIN_PATH=""
+ORIGINAL_KEYCHAIN_LIST=()
+
+capture_user_keychains() {
+  ORIGINAL_KEYCHAIN_LIST=()
+  while IFS= read -r keychain; do
+    keychain="${keychain#"${keychain%%[![:space:]]*}"}"
+    keychain="${keychain#\"}"
+    keychain="${keychain%\"}"
+    [ -n "$keychain" ] && ORIGINAL_KEYCHAIN_LIST+=("$keychain")
+  done < <(security list-keychains -d user)
+}
+
+cleanup() {
+  if [ "${#ORIGINAL_KEYCHAIN_LIST[@]}" -gt 0 ]; then
+    security list-keychains -d user -s "${ORIGINAL_KEYCHAIN_LIST[@]}" >/dev/null 2>&1 || true
+  fi
+  if [ -n "$TEMP_KEYCHAIN_PATH" ]; then
+    security delete-keychain "$TEMP_KEYCHAIN_PATH" >/dev/null 2>&1 || true
+  fi
+}
+trap cleanup EXIT
 
 notary_submit() {
   local path="$1"
@@ -70,9 +99,11 @@ require_cmd ditto
 require_cmd dmgbuild
 require_cmd gh
 require_cmd git
+require_cmd openssl
 require_cmd python3
 require_cmd shasum
 require_cmd spctl
+require_cmd security
 
 [ -z "$(git status --porcelain)" ] || fail "working tree must be clean before releasing"
 
@@ -88,12 +119,6 @@ if [ -z "${RELEASE_NOTES:-}" ]; then
   fi
 fi
 
-IDENTITY="${CODESIGN_IDENTITY:-}"
-if [ -z "$IDENTITY" ]; then
-  IDENTITY="$(security find-identity -v -p codesigning | awk '/Developer ID Application/{print $2; exit}')"
-fi
-[ -n "$IDENTITY" ] || fail "no Developer ID Application identity found"
-
 BUILD_DIR="$ROOT_DIR/build/release/$TAG"
 DMG_PATH="$BUILD_DIR/PanePilot-$TAG.dmg"
 CHECKSUM_PATH="$DMG_PATH.sha256"
@@ -102,6 +127,43 @@ NOTARY_ZIP="$BUILD_DIR/PanePilot-notary.zip"
 
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
+
+IDENTITY="${CODESIGN_IDENTITY:-}"
+CERT_PATH="${DEVELOPER_ID_APPLICATION_CERT_PATH:-$HOME/Library/Application Support/SpeakMore/signing/developer_id_application.p12}"
+CERT_PASSWORD_FILE="${DEVELOPER_ID_APPLICATION_CERT_PASSWORD_FILE:-$HOME/Library/Application Support/SpeakMore/signing/developer_id_application_p12_password.txt}"
+
+if [ -z "$IDENTITY" ] && [ -f "$CERT_PATH" ]; then
+  CERT_PASSWORD="${DEVELOPER_ID_APPLICATION_CERT_PASSWORD:-}"
+  if [ -z "$CERT_PASSWORD" ] && [ -f "$CERT_PASSWORD_FILE" ]; then
+    CERT_PASSWORD="$(tr -d '\r\n' < "$CERT_PASSWORD_FILE")"
+  fi
+  [ -n "$CERT_PASSWORD" ] || fail "password required for Developer ID certificate: $CERT_PATH"
+
+  log "Import Developer ID certificate into a temporary keychain"
+  TEMP_KEYCHAIN_PATH="$BUILD_DIR/panepilot-signing.keychain-db"
+  KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+  security create-keychain -p "$KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN_PATH"
+  security set-keychain-settings -lut 21600 "$TEMP_KEYCHAIN_PATH"
+  security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$TEMP_KEYCHAIN_PATH"
+  security import "$CERT_PATH" \
+    -k "$TEMP_KEYCHAIN_PATH" \
+    -P "$CERT_PASSWORD" \
+    -T /usr/bin/codesign \
+    -T /usr/bin/security
+  security set-key-partition-list \
+    -S apple-tool:,apple:,codesign: \
+    -s \
+    -k "$KEYCHAIN_PASSWORD" \
+    "$TEMP_KEYCHAIN_PATH"
+  capture_user_keychains
+  security list-keychains -d user -s "$TEMP_KEYCHAIN_PATH" "${ORIGINAL_KEYCHAIN_LIST[@]}"
+  IDENTITY="$(security find-identity -v -p codesigning "$TEMP_KEYCHAIN_PATH" | awk '/Developer ID Application/{print $2; exit}')"
+fi
+
+if [ -z "$IDENTITY" ]; then
+  IDENTITY="$(security find-identity -v -p codesigning | awk '/Developer ID Application/{print $2; exit}')"
+fi
+[ -n "$IDENTITY" ] || fail "no Developer ID Application identity found"
 
 log "Build app bundle"
 VERSION="$VERSION" BUILD="$BUILD" Scripts/build-app.sh
