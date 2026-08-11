@@ -1,10 +1,16 @@
-.PHONY: build test app package release release-tag verify-release launch-release validate-docs clean
+.PHONY: build test verify-hotkey-dispatch verify-window-move app package release release-tag verify-release launch-release validate-docs clean
 
 build:
 	swift build
 
 test:
 	swift test
+
+verify-hotkey-dispatch:
+	Scripts/verify-window-automation.sh dispatch
+
+verify-window-move:
+	Scripts/verify-window-automation.sh move
 
 app:
 	Scripts/build-app.sh

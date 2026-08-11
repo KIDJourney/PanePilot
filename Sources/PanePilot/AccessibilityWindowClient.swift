@@ -16,6 +16,10 @@ final class AccessibilityWindowClient {
     }
 
     func focusedWindow() -> ManagedWindow? {
+        if let appWindow = focusedWindowFromFrontmostApplication() {
+            return appWindow
+        }
+
         var value: CFTypeRef?
         let status = AXUIElementCopyAttributeValue(systemWide, kAXFocusedWindowAttribute as CFString, &value)
         guard status == .success, let element = value else {
@@ -26,6 +30,45 @@ final class AccessibilityWindowClient {
             return nil
         }
         return ManagedWindow(element: window, rect: rect)
+    }
+
+    private func focusedWindowFromFrontmostApplication() -> ManagedWindow? {
+        guard let app = NSWorkspace.shared.frontmostApplication else {
+            return nil
+        }
+        return window(forProcessIdentifier: app.processIdentifier)
+    }
+
+    func window(forProcessIdentifier processIdentifier: pid_t) -> ManagedWindow? {
+        let appElement = AXUIElementCreateApplication(processIdentifier)
+        for attribute in [kAXFocusedWindowAttribute, kAXMainWindowAttribute] {
+            var value: CFTypeRef?
+            let status = AXUIElementCopyAttributeValue(appElement, attribute as CFString, &value)
+            guard status == .success, let element = value else {
+                continue
+            }
+            let window = element as! AXUIElement
+            if let rect = rect(for: window) {
+                return ManagedWindow(element: window, rect: rect)
+            }
+        }
+        return windows(forProcessIdentifier: processIdentifier).first
+    }
+
+    func windows(forProcessIdentifier processIdentifier: pid_t) -> [ManagedWindow] {
+        let appElement = AXUIElementCreateApplication(processIdentifier)
+        var windowsRef: CFTypeRef?
+        if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+           let windows = windowsRef as? NSArray {
+            return windows.compactMap { window in
+                let window = window as! AXUIElement
+                guard let rect = rect(for: window) else {
+                    return nil
+                }
+                return ManagedWindow(element: window, rect: rect)
+            }
+        }
+        return []
     }
 
     func rect(for window: ManagedWindow) -> CGRect? {

@@ -47,6 +47,17 @@
 - 最终可观察结果。
 - 未覆盖环节和阻塞点。
 
+### macOS 窗口移动自动化
+
+`make verify-hotkey-dispatch` 由独立的 `System Events` 进程注入按键，用于验证 Carbon 全局快捷键注册和 handler 分发，避免 macOS 丢弃被测进程发给自身的合成全局热键。`make verify-window-move` 会创建固定尺寸的真实 AppKit 夹具窗口，用于验证 Accessibility 聚焦窗口读取、`WindowCommander` 和 AX 写入的最终结果；测试退出前恢复原位置，不操作用户窗口。两道门禁分层覆盖快捷键到窗口动作的完整路径，避免 `System Events` 在前台夹具上继续处理同一个合成按键而覆盖 AX 断言。运行前置条件：
+
+- Mac 已解锁。
+- 当前是活跃用户桌面，不是 `loginwindow`。
+- 当前可执行文件已获得 Accessibility 权限。
+- 运行 `make verify-hotkey-dispatch` 时，当前终端或 Agent 可以通过 `System Events` 发送按键。
+
+如果前台是 `loginwindow`，命令应失败并提示先解锁，而不是继续尝试移动窗口。
+
 ## 回滚验证
 
 适用场景：发布、迁移、配置变更、数据结构变更。

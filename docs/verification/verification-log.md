@@ -6,6 +6,7 @@
 
 | 日期 | 场景 | 变更 | 验证 | 结果 |
 |---|---|---|---|---|
+| 2026-08-11 | 快捷键配置和窗口移动修复 | 增加 Preferences 快捷键配置、`ShortcutStore`、frontmost app AX focused/main window 读取、外部进程热键分发和真实 AppKit 夹具窗口动作自动化 | `swift build`、`swift test`、`make verify-hotkey-dispatch`、`make verify-window-move`、`make package`、`make validate-docs`；通过 System Events 验收 Preferences 选择、录制态、无修饰键校验和录制中关闭清理 | 通过；`Option-Command-Left` 已进入 Carbon handler，`WindowCommander` 已把前台夹具窗口移动到左半屏后恢复；Preferences 控件状态、输入校验和关闭后的键盘 monitor 清理符合预期 |
 | 2026-08-11 | AI Workspace 初始化 | 复制 `AGENTS.md`、`docs/`、`scripts/validate-docs.sh`，保留已有 `README.md` 和 `Makefile` | 初始化器自动运行 `./scripts/validate-docs.sh` | 通过，输出 `docs validation passed (31 markdown files)` |
 | 2026-08-11 | Developer ID Release 脚本 | 参考 SpeakMore 增加本地 Developer ID signed、notarized、stapled DMG 发布链路，并移除 tag 上自动发布 ad-hoc zip 的 workflow | `swift test`、`make validate-docs`、`make release-tag TAG=v0.1.1`、`make verify-release TAG=v0.1.1`、`make launch-release TAG=v0.1.1`；GitHub CI run `31480007926` | 通过；GitHub Release `v0.1.1` 已发布，DMG sha256 为 `a204f52ed14846b87446ecb0ec8c6909613adda25a3fe0a2424bcc9e5fb6824b`，App/DMG 均为 `Notarized Developer ID` |
 | 2026-08-11 | 自动打包和旧 ad-hoc Release | 新增 `ci.yml`、旧 `release.yml`、`package-app.sh`，扩展 Makefile | 本地：`make validate-docs`、`swift test`、`make package`；远端：CI run `31478395654`、Release run `31478418091` | 通过；GitHub Release `v0.1.0` 已发布，asset 为 ad-hoc signed `PanePilot-v0.1.0-macos-arm64.zip`；后续正式分发改走 Developer ID DMG |
@@ -13,7 +14,7 @@
 
 ## 当前风险
 
-1. 自动化测试尚未覆盖真实 Accessibility 权限和桌面窗口移动，只覆盖纯布局逻辑、打包和最终 DMG 启动流程。
+1. 热键注入和真实窗口移动自动化依赖已解锁用户桌面、Accessibility 权限，以及调用方控制 `System Events` 的权限，不能在无 GUI 的 CI runner 中执行。
 
 ## 未覆盖项
 

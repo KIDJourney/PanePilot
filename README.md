@@ -25,6 +25,7 @@ Sources:
 - Menu bar app, no Dock icon.
 - Accessibility permission prompt and System Settings shortcut.
 - Global hotkeys using Carbon `RegisterEventHotKey`.
+- Preferences window for recording, clearing, disabling, and resetting shortcuts.
 - Focused-window movement via `AXUIElement`.
 - Layouts: center, maximize, halves, corners, thirds, grow, shrink.
 - Multi-display move preserving relative position.
@@ -62,12 +63,15 @@ Sources:
 swift build
 swift test
 make validate-docs
+make verify-hotkey-dispatch
+make verify-window-move
 make app
 make package
 open dist/PanePilot.app
 ```
 
 On first launch, grant PanePilot permission in System Settings -> Privacy & Security -> Accessibility.
+`make verify-hotkey-dispatch` and `make verify-window-move` must run while the Mac is unlocked and a user desktop is active. Hotkey dispatch uses `System Events` as an external keyboard-event injector, so the invoking terminal or Agent must also be allowed to control it; window movement runs against an isolated AppKit fixture.
 
 ## Release notes
 

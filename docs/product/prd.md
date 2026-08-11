@@ -27,6 +27,7 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 |---|---|---|
 | 菜单栏 App | 无 Dock 图标，通过状态栏菜单提供命令入口 | 已完成初版 |
 | 全局快捷键 | 使用 Spectacle 风格默认快捷键触发窗口操作 | 已完成初版 |
+| 快捷键偏好设置 | 通过 Preferences 窗口录制、清除、禁用和恢复默认快捷键 | 已完成初版 |
 | 窗口布局 | 支持居中、最大化、半屏、四角、三分屏、放大缩小 | 已完成初版 |
 | 多显示器移动 | 在显示器之间移动窗口并保持相对位置 | 已完成初版 |
 | 撤销 / 重做 | 记录窗口移动历史并恢复 | 已完成初版 |
@@ -39,7 +40,6 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 | 范围 | 说明 |
 |---|---|
 | 拖拽吸附 | 第一版聚焦快捷键窗口管理，不追 Rectangle 的 snap areas |
-| 偏好设置 UI | 第一版固定默认快捷键，后续再做可编辑快捷键 |
 | GitHub Actions 签名发布 | 当前正式发布依赖本机 Developer ID 证书；CI 只做 ad-hoc artifact |
 | App Store 发布 | 窗口管理工具依赖 Accessibility 权限，当前目标是 GitHub Release |
 
@@ -55,7 +55,7 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 
 | 需求 | 状态 | 定义 |
 |---|---|---|
-| 快捷键偏好设置 | 未开始 | 提供 UI 修改或禁用默认快捷键 |
+| 快捷键偏好设置 | 已完成初版 | 提供 UI 修改或禁用默认快捷键 |
 | Developer ID 发布 | 已完成初版 | 复用本机 Developer ID 证书、notarytool 和 stapler，生成可正式分发 DMG |
 | Universal binary | 未开始 | 如需要同时覆盖 Intel Mac，增加 x86_64 构建或 universal packaging |
 | 窗口约束适配 | 未开始 | 对 Terminal 等有最小尺寸/网格约束的 App 做更细的 best-effort 调整 |

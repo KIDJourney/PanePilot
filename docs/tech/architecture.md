@@ -10,7 +10,8 @@ PanePilot 是一个 Swift Package 组织的 macOS App。核心布局计算在 `P
 Global hotkey / Status menu
   -> WindowCommander
      -> AccessibilityWindowClient
-        -> AXUIElement focused window
+        -> frontmost app AX focused/main window
+        -> system-wide focused window fallback
         -> NSScreen visible frames
      -> PanePilotCore.LayoutEngine
         -> target CGRect
@@ -26,8 +27,11 @@ Global hotkey / Status menu
 | `Sources/PanePilot/main.swift` | AppKit app 入口，设置 accessory activation policy |
 | `Sources/PanePilot/AppDelegate.swift` | 状态栏菜单、命令绑定、启动时注册快捷键 |
 | `Sources/PanePilot/HotKeyManager.swift` | Carbon `RegisterEventHotKey` 全局快捷键 |
+| `Sources/PanePilot/ShortcutStore.swift` | 用户快捷键覆盖、禁用状态和默认值合并 |
+| `Sources/PanePilot/PreferencesWindowController.swift` | 快捷键偏好设置窗口、录制和冲突检查 |
 | `Sources/PanePilot/AccessibilityWindowClient.swift` | Accessibility 权限、聚焦窗口读取和窗口位置写入 |
 | `Sources/PanePilot/WindowCommander.swift` | 命令编排、撤销/重做历史 |
+| `Sources/PanePilot/AutomationWindowMoveTest.swift` | 本地真实桌面窗口移动自动化入口 |
 | `Scripts/build-app.sh` | release build、bundle Info.plist、ad-hoc signing |
 | `Scripts/package-app.sh` | 生成 GitHub artifact / release zip |
 | `Scripts/release-local.sh` | Developer ID 签名、公证、staple、DMG 和 GitHub Release 上传 |
@@ -39,6 +43,8 @@ Global hotkey / Status menu
 ## 坐标系统
 
 Accessibility API 使用全局左上角坐标；`NSScreen` 使用 Cocoa 坐标。`AccessibilityWindowClient` 把 `NSScreen.visibleFrame` 转换成 Accessibility 坐标后传给 `LayoutEngine`，避免布局层依赖 AppKit。
+
+聚焦窗口读取优先使用 `NSWorkspace.shared.frontmostApplication` 对应进程的 `AXFocusedWindow` / `AXMainWindow`。这是为新 macOS 上 system-wide `AXFocusedWindow` 可能返回 `kAXErrorCannotComplete` 的情况做的主路径修复；system-wide focused window 仅作为 fallback。
 
 ## 权限和发布
 
@@ -53,3 +59,4 @@ CI 运行在 `macos-26`，这是 GitHub hosted runners 的标准 Apple Silicon m
 1. 某些 App 对窗口最小尺寸或网格尺寸有约束，最终窗口尺寸可能与目标布局不同。
 2. 当前正式 release 依赖本机 Developer ID 证书和 notarytool profile；证书或 Apple 凭证失效会阻塞发布。
 3. 当前只发布 Apple Silicon DMG；如需要 Intel Mac，需要增加 x86_64 或 universal 构建策略。
+4. 真实窗口移动自动化必须在已解锁、活跃用户桌面运行；锁屏或 `loginwindow` 前台时无法验证用户窗口。
