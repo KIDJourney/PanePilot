@@ -12,7 +12,7 @@
 
 ## 当前风险
 
-1. GitHub Actions runner 可用性依赖 GitHub hosted `macos-26-arm64` 镜像。
+1. GitHub Actions runner 可用性依赖 GitHub hosted `macos-26` runner。
 2. 当前 release zip 是 ad-hoc signed，未做 Developer ID 公证。
 3. 自动化测试尚未覆盖真实 Accessibility 权限和桌面窗口移动，只覆盖纯布局逻辑和打包流程。
 

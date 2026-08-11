@@ -72,7 +72,7 @@ On first launch, grant PanePilot permission in System Settings -> Privacy & Secu
 
 `Scripts/build-app.sh` creates an ad-hoc signed app for local testing. For public distribution, replace ad-hoc signing with a Developer ID signature and submit the app for Apple notarization.
 
-Every push or pull request to `main` runs GitHub Actions CI on `macos-26-arm64`, validates docs, builds, tests, packages `PanePilot.app`, and uploads the zip as a workflow artifact.
+Every push or pull request to `main` runs GitHub Actions CI on `macos-26`, validates docs, builds, tests, packages `PanePilot.app`, and uploads the zip as a workflow artifact.
 
 Create a GitHub Release by pushing a version tag:
 

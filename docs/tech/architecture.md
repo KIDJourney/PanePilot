@@ -43,7 +43,7 @@ PanePilot 需要 macOS Accessibility 权限才能控制其他 App 的窗口。�
 
 ## CI / Release
 
-CI 运行在 `macos-26-arm64`，因为项目使用 Swift 6.2 且目标是现代 Apple Silicon macOS。普通代码变更通过 `ci.yml` 上传 zip artifact；推送 `v*` tag 通过 `release.yml` 创建 GitHub Release。
+CI 运行在 `macos-26`，这是 GitHub hosted runners 的标准 Apple Silicon macOS 26 label。项目使用 Swift 6.2 且目标是现代 Apple Silicon macOS。普通代码变更通过 `ci.yml` 上传 zip artifact；推送 `v*` tag 通过 `release.yml` 创建 GitHub Release。
 
 ## 技术风险
 
