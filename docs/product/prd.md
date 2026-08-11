@@ -32,7 +32,7 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 | 撤销 / 重做 | 记录窗口移动历史并恢复 | 已完成初版 |
 | 本地打包 | 生成 ad-hoc signed `.app` 和 zip 包 | 已完成初版 |
 | GitHub CI | 每次 push / PR 自动验证、构建、测试、打包 artifact | 已完成初版 |
-| GitHub Release | 推送 `v*` tag 自动生成 GitHub Release 和 app zip | 已完成初版 |
+| GitHub Release | 本地 release 脚本生成签名公证 DMG 并上传 GitHub Release | 已完成初版 |
 
 ## 当前不做
 
@@ -40,7 +40,7 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 |---|---|
 | 拖拽吸附 | 第一版聚焦快捷键窗口管理，不追 Rectangle 的 snap areas |
 | 偏好设置 UI | 第一版固定默认快捷键，后续再做可编辑快捷键 |
-| Developer ID 签名和公证 | 当前 CI 产物为 ad-hoc signed，用于开源预览；正式分发需配置证书和 notarytool |
+| GitHub Actions 签名发布 | 当前正式发布依赖本机 Developer ID 证书；CI 只做 ad-hoc artifact |
 | App Store 发布 | 窗口管理工具依赖 Accessibility 权限，当前目标是 GitHub Release |
 
 ## 用户故事
@@ -49,13 +49,13 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 2. 作为多显示器用户，我希望能用快捷键把当前窗口移动到下一块显示器。
 3. 作为键盘用户，我希望窗口操作可撤销，误触后能快速恢复。
 4. 作为维护者，我希望每次代码变更都自动生成可下载构建产物。
-5. 作为发布者，我希望打 tag 后自动创建 GitHub Release。
+5. 作为发布者，我希望一条命令生成签名、公证、可通过 Gatekeeper 的 GitHub Release。
 
 ## 后续需求池
 
 | 需求 | 状态 | 定义 |
 |---|---|---|
 | 快捷键偏好设置 | 未开始 | 提供 UI 修改或禁用默认快捷键 |
-| Developer ID 发布 | 未开始 | 配置证书、notarytool 和 stapler，生成可正式分发产物 |
+| Developer ID 发布 | 已完成初版 | 复用本机 Developer ID 证书、notarytool 和 stapler，生成可正式分发 DMG |
 | Universal binary | 未开始 | 如需要同时覆盖 Intel Mac，增加 x86_64 构建或 universal packaging |
 | 窗口约束适配 | 未开始 | 对 Terminal 等有最小尺寸/网格约束的 App 做更细的 best-effort 调整 |

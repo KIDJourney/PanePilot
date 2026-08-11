@@ -2,15 +2,26 @@
 
 本文档记录影响未来工作的设计决策。新增重大决策时，按模板追加到最上方或创建独立 ADR 文件。
 
-## DEC-0003: 用 GitHub Actions 自动打包和发布
+## DEC-0004: 正式 Release 使用本地 Developer ID 签名和公证
+
+| 字段 | 内容 |
+|---|---|
+| 日期 | 2026-08-11 |
+| 状态 | 已接受 |
+| 背景 | GitHub Actions 的 ad-hoc zip 不能作为公开分发包；用户要求参考 SpeakMore 给 PanePilot 做 Apple 签名 |
+| 决策 | 普通 CI 继续上传 ad-hoc artifact；正式 GitHub Release 由本机 `make release-tag TAG=vx.y.z` 创建 Developer ID signed、notarized、stapled DMG |
+| 理由 | 本机已有 Developer ID 证书和 notarytool profile，能立即产出 Gatekeeper accepted 包；避免 tag workflow 误发未签名 zip |
+| 影响 | 推 tag 不再自动发布；正式发版必须走本地 release 脚本并记录验证结果 |
+
+## DEC-0003: 用 GitHub Actions 自动打包每次代码变更
 
 | 字段 | 内容 |
 |---|---|
 | 日期 | 2026-08-11 |
 | 状态 | 已接受 |
 | 背景 | 项目需要 GitHub Release，且每次代码变更都需要自动化打包 |
-| 决策 | push / PR 运行 CI 并上传 app zip artifact；推送 `v*` tag 自动创建 GitHub Release |
-| 理由 | 让普通变更也有可下载构建产物，同时把正式 release 固定到不可变 tag |
+| 决策 | push / PR 运行 CI 并上传 app zip artifact；正式 release 另走 Developer ID 本地发布脚本 |
+| 理由 | 让普通变更也有可下载构建产物，同时避免把 ad-hoc CI 产物当作正式分发 |
 | 影响 | 修改代码、打包脚本或 workflow 后必须关注 GitHub Actions 结果 |
 
 ## DEC-0002: 初版使用 Swift Package + AppKit，而不是迁移旧 Xcode 工程

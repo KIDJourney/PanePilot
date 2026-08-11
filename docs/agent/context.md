@@ -10,8 +10,8 @@ PanePilot 当前是 v0.1 初版：Swift 6.2、macOS 14+、Apple Silicon 优先�
 
 1. `main` 是发布主线。
 2. 每次代码变更都要通过 GitHub Actions 自动构建、测试和打包。
-3. Release 通过 `v*` tag 触发，不手工上传本地产物作为常规流程。
-4. 当前 CI 产物是 ad-hoc signed arm64 zip，不等同于正式公证分发包。
+3. 正式 Release 通过本地 `make release-tag TAG=vx.y.z` 触发，使用 Developer ID 签名、公证和 stapling。
+4. 当前 CI 产物是 ad-hoc signed arm64 zip，只是每次变更的预览 artifact，不等同于正式分发包。
 5. `docs/` 是长期知识库；`AGENTS.md` 是跨 agent 的统一入口。
 
 ## 已完成
@@ -20,10 +20,10 @@ PanePilot 当前是 v0.1 初版：Swift 6.2、macOS 14+、Apple Silicon 优先�
 - 实现菜单栏 App、默认快捷键、Accessibility 窗口移动、撤销/重做。
 - 添加 `make app` 和 `make package`。
 - 初始化 AI Workspace 文档结构。
-- 添加 GitHub Actions CI 和 Release workflow。
+- 添加 GitHub Actions CI。
+- 添加 Developer ID signed + notarized GitHub Release 脚本。
 
 ## 下一步
 
-1. 后续考虑快捷键偏好设置和 Developer ID 公证发布。
-2. 如果要支持 Intel Mac，设计 universal binary 或独立 x86_64 artifact。
-3. 增加真实桌面手工验收记录，尤其是 Accessibility 权限和多显示器。
+1. 如果要支持 Intel Mac，设计 universal binary 或独立 x86_64 artifact。
+2. 增加真实桌面手工验收记录，尤其是 Accessibility 权限和多显示器。

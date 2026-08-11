@@ -30,8 +30,11 @@ Global hotkey / Status menu
 | `Sources/PanePilot/WindowCommander.swift` | 命令编排、撤销/重做历史 |
 | `Scripts/build-app.sh` | release build、bundle Info.plist、ad-hoc signing |
 | `Scripts/package-app.sh` | 生成 GitHub artifact / release zip |
+| `Scripts/release-local.sh` | Developer ID 签名、公证、staple、DMG 和 GitHub Release 上传 |
+| `Scripts/release-tag.sh` | 高层正式发布入口，可复用 notary profile |
+| `Scripts/verify-release.sh` | 下载 GitHub Release DMG 并校验 sha256、公证和 Gatekeeper |
+| `Scripts/launch-release-app.sh` | 从最终 DMG 启动 App 并验证进程存活 |
 | `.github/workflows/ci.yml` | push / PR 自动验证、构建、测试、打包 |
-| `.github/workflows/release.yml` | tag / 手动触发 GitHub Release |
 
 ## 坐标系统
 
@@ -39,14 +42,14 @@ Accessibility API 使用全局左上角坐标；`NSScreen` 使用 Cocoa 坐标�
 
 ## 权限和发布
 
-PanePilot 需要 macOS Accessibility 权限才能控制其他 App 的窗口。当前本地和 CI 产物使用 ad-hoc signing，可用于开发和预览。正式分发前需要 Developer ID 签名、公证和 stapling。
+PanePilot 需要 macOS Accessibility 权限才能控制其他 App 的窗口。当前本地和 CI 快速产物使用 ad-hoc signing，仅用于开发和预览。正式 GitHub Release 使用 Developer ID 签名、公证和 stapling。
 
 ## CI / Release
 
-CI 运行在 `macos-26`，这是 GitHub hosted runners 的标准 Apple Silicon macOS 26 label。项目使用 Swift 6.2 且目标是现代 Apple Silicon macOS。普通代码变更通过 `ci.yml` 上传 zip artifact；推送 `v*` tag 通过 `release.yml` 创建 GitHub Release。
+CI 运行在 `macos-26`，这是 GitHub hosted runners 的标准 Apple Silicon macOS 26 label。项目使用 Swift 6.2 且目标是现代 Apple Silicon macOS。普通代码变更通过 `ci.yml` 上传 ad-hoc zip artifact；正式 GitHub Release 由本地 `make release-tag TAG=vx.y.z` 创建签名公证 DMG。
 
 ## 技术风险
 
 1. 某些 App 对窗口最小尺寸或网格尺寸有约束，最终窗口尺寸可能与目标布局不同。
-2. 未配置 Developer ID 前，GitHub Release 产物不是正式公证分发包。
-3. 当前只发布 arm64 zip；如需要 Intel Mac，需要增加 x86_64 或 universal 构建策略。
+2. 当前正式 release 依赖本机 Developer ID 证书和 notarytool profile；证书或 Apple 凭证失效会阻塞发布。
+3. 当前只发布 Apple Silicon DMG；如需要 Intel Mac，需要增加 x86_64 或 universal 构建策略。

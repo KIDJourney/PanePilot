@@ -16,7 +16,10 @@
 | Swift build | 编译 `PanePilotCore` 和菜单栏 app | `swift build` |
 | Swift tests | `LayoutEngine` 半屏、居中、跨屏行为 | `swift test` |
 | App bundle | 生成 `.app`、Info.plist 和 ad-hoc signature | `make app` |
-| Zip package | 生成 GitHub artifact / release zip | `make package` |
+| Zip package | 生成 GitHub CI artifact zip | `make package` |
+| Signed release | 生成 Developer ID signed + notarized DMG 并上传 GitHub Release | `make release-tag TAG=vx.y.z` |
+| Release verification | 下载 GitHub Release DMG，校验 sha256、公证和 Gatekeeper | `make verify-release TAG=vx.y.z` |
+| Launch verification | 从最终 DMG 启动 App 并确认进程存活 | `make launch-release TAG=vx.y.z` |
 | 文档结构检查 | 根目录入口、关键目录、Markdown 链接 | `make validate-docs` |
 | GitHub CI | push / PR 自动运行验证和打包 | `.github/workflows/ci.yml` |
 
@@ -39,3 +42,5 @@
 - 修改 hotkey 注册。
 - 修改打包脚本或 GitHub Actions workflow。
 - 新增、移动或删除 Markdown 文件。
+
+正式发布前还必须执行 `make release-tag TAG=vx.y.z`、`make verify-release TAG=vx.y.z` 和 `make launch-release TAG=vx.y.z`。

@@ -29,7 +29,8 @@ Sources:
 - Layouts: center, maximize, halves, corners, thirds, grow, shrink.
 - Multi-display move preserving relative position.
 - Undo and redo history for moved windows.
-- `.app` bundle script with ad-hoc signing for local runs.
+- `.app` bundle script with ad-hoc signing for local CI artifacts.
+- Developer ID signing, notarization, stapling, DMG packaging, and GitHub Release upload for public releases.
 - Pure layout tests.
 
 ## Shortcuts
@@ -70,18 +71,19 @@ On first launch, grant PanePilot permission in System Settings -> Privacy & Secu
 
 ## Release notes
 
-`Scripts/build-app.sh` creates an ad-hoc signed app for local testing. For public distribution, replace ad-hoc signing with a Developer ID signature and submit the app for Apple notarization.
+`Scripts/build-app.sh` creates an ad-hoc signed app for local testing and CI artifacts.
 
-Every push or pull request to `main` runs GitHub Actions CI on `macos-26`, validates docs, builds, tests, packages `PanePilot.app`, and uploads the zip as a workflow artifact.
+Every push or pull request to `main` runs GitHub Actions CI on `macos-26`, validates docs, builds, tests, packages `PanePilot.app`, and uploads the zip as a workflow artifact. These artifacts are not public distribution builds.
 
-Create a GitHub Release by pushing a version tag:
+Create a signed and notarized GitHub Release locally:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+make release-tag TAG=v0.1.1
+make verify-release TAG=v0.1.1
+make launch-release TAG=v0.1.1
 ```
 
-The Release workflow rebuilds the app, packages `PanePilot-vX.Y.Z-macos-arm64.zip`, and publishes it to GitHub Releases.
+The release script uses a Developer ID Application certificate, submits the app and DMG to Apple notarization, staples both, validates Gatekeeper, then uploads `PanePilot-vX.Y.Z.dmg` and its sha256 to GitHub Releases.
 
 ## Name candidates
 
