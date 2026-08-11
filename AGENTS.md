@@ -70,6 +70,12 @@ tree -a -L 3 -I '.git|node_modules|dist|build' .
 rg "TODO|待确认|阻塞" docs
 ```
 
+## 发布完成门禁
+
+- GitHub Actions 上传的 ad-hoc zip artifact 只是每次变更的 CI 预览产物，不等同于 GitHub Release。
+- 任务明确要求“发布”或“Release”时，必须按 `docs/tech/operations.md` 依次执行 `make release-tag TAG=vx.y.z`、`make verify-release TAG=vx.y.z` 和 `make launch-release TAG=vx.y.z`。
+- 只有远端 tag 与目标 commit 一致、`gh release view` 可见正式 DMG 和 sha256、下载校验与最终 DMG 启动验证全部通过后，才可以报告 Release 已完成。
+
 ## Git 规则
 
 - 提交前先看 `git status --short --untracked-files=all`。
