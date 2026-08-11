@@ -5,6 +5,8 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="PanePilot"
 BUNDLE_ID="${BUNDLE_ID:-dev.panepilot.app}"
 CONFIGURATION="${CONFIGURATION:-release}"
+VERSION="${VERSION:-0.1.0}"
+BUILD="${BUILD:-1}"
 
 cd "$ROOT_DIR"
 swift build -c "$CONFIGURATION"
@@ -36,9 +38,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>$VERSION</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>$BUILD</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>LSUIElement</key>

@@ -1,4 +1,4 @@
-.PHONY: build test app clean
+.PHONY: build test app package validate-docs clean
 
 build:
 	swift build
@@ -8,6 +8,12 @@ test:
 
 app:
 	Scripts/build-app.sh
+
+package:
+	Scripts/package-app.sh
+
+validate-docs:
+	scripts/validate-docs.sh
 
 clean:
 	rm -rf .build dist

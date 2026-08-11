@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build, test, and package
+    runs-on: macos-26-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Tool versions
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Validate docs
+        run: make validate-docs
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+      - name: Package app
+        run: make package
+
+      - name: Upload packaged app
+        uses: actions/upload-artifact@v4
+        with:
+          name: PanePilot-macos-arm64-${{ github.sha }}
+          path: dist/PanePilot-v*-macos-arm64.zip
+          if-no-files-found: error

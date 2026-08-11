@@ -60,7 +60,9 @@ Sources:
 ```sh
 swift build
 swift test
+make validate-docs
 make app
+make package
 open dist/PanePilot.app
 ```
 
@@ -69,6 +71,17 @@ On first launch, grant PanePilot permission in System Settings -> Privacy & Secu
 ## Release notes
 
 `Scripts/build-app.sh` creates an ad-hoc signed app for local testing. For public distribution, replace ad-hoc signing with a Developer ID signature and submit the app for Apple notarization.
+
+Every push or pull request to `main` runs GitHub Actions CI on `macos-26-arm64`, validates docs, builds, tests, packages `PanePilot.app`, and uploads the zip as a workflow artifact.
+
+Create a GitHub Release by pushing a version tag:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The Release workflow rebuilds the app, packages `PanePilot-vX.Y.Z-macos-arm64.zip`, and publishes it to GitHub Releases.
 
 ## Name candidates
 
