@@ -2,6 +2,10 @@
   <img src="Resources/AppIcon.png" width="144" alt="PanePilot app icon">
 </p>
 
+<p align="center">
+  English | <a href="README.zh-CN.md">简体中文</a>
+</p>
+
 # PanePilot
 
 Arrange macOS windows from the keyboard and keep your hands in the work.
