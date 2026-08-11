@@ -24,6 +24,6 @@ PanePilot 当前是 v0.1 初版：Swift 6.2、macOS 14+、Apple Silicon 优先�
 
 ## 下一步
 
-1. 在 GitHub Actions 上确认 `macos-26` workflow 通过。
-2. 通过 `v0.1.0` tag 创建首个 GitHub Release。
-3. 后续考虑快捷键偏好设置和 Developer ID 公证发布。
+1. 后续考虑快捷键偏好设置和 Developer ID 公证发布。
+2. 如果要支持 Intel Mac，设计 universal binary 或独立 x86_64 artifact。
+3. 增加真实桌面手工验收记录，尤其是 Accessibility 权限和多显示器。
