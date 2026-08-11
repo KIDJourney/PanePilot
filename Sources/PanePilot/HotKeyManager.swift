@@ -140,6 +140,20 @@ struct KeyboardShortcut: Equatable {
         return modifierText.isEmpty ? keyText : "\(modifierText)-\(keyText)"
     }
 
+    var symbolicLabel: String {
+        modifiers.sortedForMenu.map(\.symbol).joined() + KeyCodeLabel.symbol(for: keyCode)
+    }
+
+    var menuKeyEquivalent: String? {
+        KeyCodeLabel.keyEquivalent(for: keyCode)
+    }
+
+    var eventModifierFlags: NSEvent.ModifierFlags {
+        modifiers.reduce(into: []) { result, modifier in
+            result.insert(modifier.eventFlag)
+        }
+    }
+
     init(action: WindowAction, keyCode: Int, modifiers: Set<KeyboardModifier>, label _: String? = nil) {
         self.action = action
         self.keyCode = keyCode
@@ -174,11 +188,33 @@ enum KeyboardModifier: String, Codable, CaseIterable {
         case .shift: "Shift"
         }
     }
+
+    var symbol: String {
+        switch self {
+        case .command: "⌘"
+        case .control: "⌃"
+        case .option: "⌥"
+        case .shift: "⇧"
+        }
+    }
+
+    var eventFlag: NSEvent.ModifierFlags {
+        switch self {
+        case .command: .command
+        case .control: .control
+        case .option: .option
+        case .shift: .shift
+        }
+    }
 }
 
 private extension Set where Element == KeyboardModifier {
     var sortedForDisplay: [KeyboardModifier] {
         KeyboardModifier.allCases.filter { contains($0) }
+    }
+
+    var sortedForMenu: [KeyboardModifier] {
+        [.control, .option, .shift, .command].filter { contains($0) }
     }
 }
 
@@ -221,6 +257,41 @@ enum KeyCodeLabel {
         case kVK_Escape: "Escape"
         case kVK_Delete: "Delete"
         default: "Key \(keyCode)"
+        }
+    }
+
+    static func symbol(for keyCode: Int) -> String {
+        switch keyCode {
+        case kVK_LeftArrow: "←"
+        case kVK_RightArrow: "→"
+        case kVK_UpArrow: "↑"
+        case kVK_DownArrow: "↓"
+        case kVK_Return: "↩"
+        case kVK_Tab: "⇥"
+        case kVK_Escape: "⎋"
+        case kVK_Delete: "⌫"
+        default: label(for: keyCode)
+        }
+    }
+
+    static func keyEquivalent(for keyCode: Int) -> String? {
+        switch keyCode {
+        case kVK_LeftArrow:
+            return String(UnicodeScalar(NSLeftArrowFunctionKey)!)
+        case kVK_RightArrow:
+            return String(UnicodeScalar(NSRightArrowFunctionKey)!)
+        case kVK_UpArrow:
+            return String(UnicodeScalar(NSUpArrowFunctionKey)!)
+        case kVK_DownArrow:
+            return String(UnicodeScalar(NSDownArrowFunctionKey)!)
+        case kVK_Space: return " "
+        case kVK_Return: return "\r"
+        case kVK_Tab: return "\t"
+        case kVK_Escape: return "\u{1b}"
+        case kVK_Delete: return "\u{8}"
+        default:
+            let key = label(for: keyCode)
+            return key.count == 1 && key.first?.isLetter == true ? key.lowercased() : nil
         }
     }
 }

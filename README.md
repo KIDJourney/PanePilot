@@ -1,63 +1,66 @@
+<p align="center">
+  <img src="Resources/AppIcon.png" width="144" alt="PanePilot app icon">
+</p>
+
 # PanePilot
 
-PanePilot is a modern Swift rewrite of the core Spectacle workflow: move and resize the focused macOS window with global keyboard shortcuts.
+Arrange macOS windows from the keyboard and keep your hands in the work.
 
-## Research snapshot
+PanePilot is a lightweight menu bar utility for Apple Silicon Macs. It moves the focused window into halves, corners, thirds, displays, or a centered layout with global shortcuts. It also keeps an undo and redo history when a layout needs one more pass.
 
-As of 2026-08-10:
+[Download the latest signed release](https://github.com/KIDJourney/PanePilot/releases/latest) | macOS 14 or later | Apple Silicon
 
-- `eczarny/spectacle` is archived and read-only. GitHub shows it was archived on 2023-01-21, and its README says the project is not actively maintained.
-- Spectacle's own README points users toward Rectangle as an open-source alternative.
-- The original project is Objective-C and uses Carthage. PanePilot starts fresh in Swift 6.2 with a small Swift Package layout.
-- Rectangle is the practical modern successor today: its site describes macOS shortcut and snap-area support, and states macOS 10.15+, Intel, and Apple Silicon support.
-- A keyboard window manager still needs macOS Accessibility permission because it controls other apps' windows through the Accessibility API.
+## When PanePilot Helps
 
-Sources:
+### Code beside the result
 
-- https://github.com/eczarny/spectacle
-- https://rectangleapp.com/
-- https://ryanhanson.dev/posts/switchToRectangle
-- https://developer.apple.com/documentation/applicationservices/axuielement_h
-- https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution
+Put an editor on the left and a browser, simulator, or terminal on the right. Switch either window to a corner when you need a third reference without dragging borders.
 
-## Implemented
+### Research without losing context
 
-- Menu bar app, no Dock icon.
-- Accessibility permission prompt and System Settings shortcut.
-- Global hotkeys using Carbon `RegisterEventHotKey`.
-- Preferences window for recording, clearing, disabling, and resetting shortcuts.
-- Focused-window movement via `AXUIElement`.
-- Layouts: center, maximize, halves, corners, thirds, grow, shrink.
-- Multi-display move preserving relative position.
-- Undo and redo history for moved windows.
-- `.app` bundle script with ad-hoc signing for local CI artifacts.
-- Developer ID signing, notarization, stapling, DMG packaging, and GitHub Release upload for public releases.
-- Pure layout tests.
+Keep notes in one half while moving source material through the other half or the next third. Center a document when it becomes the only thing that matters.
 
-## Shortcuts
+### Present across displays
 
-| Action | Shortcut |
-| --- | --- |
-| Center | Option-Command-C |
-| Maximize | Option-Command-F |
-| Left Half | Option-Command-Left |
-| Right Half | Option-Command-Right |
-| Top Half | Option-Command-Up |
-| Bottom Half | Option-Command-Down |
-| Upper Left | Control-Command-Left |
-| Lower Left | Control-Shift-Command-Left |
-| Upper Right | Control-Command-Right |
-| Lower Right | Control-Shift-Command-Right |
-| Next Third | Control-Option-Right |
-| Previous Third | Control-Option-Left |
-| Make Larger | Control-Option-Shift-Right |
-| Make Smaller | Control-Option-Shift-Left |
-| Next Display | Control-Option-Command-Right |
-| Previous Display | Control-Option-Command-Left |
-| Undo | Option-Command-Z |
-| Redo | Option-Shift-Command-Z |
+Send the focused window to the next or previous display while preserving its relative size and position. PanePilot uses each display's visible workspace, including the menu bar and Dock boundaries.
 
-## Build
+### Explore layouts freely
+
+Grow, shrink, or cycle through thirds, then use Undo and Redo to move through recent PanePilot arrangements without reconstructing them by hand.
+
+## Quick Start
+
+1. Download the latest DMG from [GitHub Releases](https://github.com/KIDJourney/PanePilot/releases/latest).
+2. Drag PanePilot to Applications and open it.
+3. Grant PanePilot access in System Settings > Privacy & Security > Accessibility.
+4. Use the PanePilot icon in the menu bar or press a global shortcut.
+
+Public releases are signed with a Developer ID certificate, notarized by Apple, and stapled before upload.
+
+## Layouts And Shortcuts
+
+| Task | Action | Default shortcut |
+| --- | --- | --- |
+| Focus | Center | Option-Command-C |
+| Focus | Maximize | Option-Command-F |
+| Split | Left / Right Half | Option-Command-Left / Right |
+| Split | Top / Bottom Half | Option-Command-Up / Down |
+| Tile | Upper Left / Right | Control-Command-Left / Right |
+| Tile | Lower Left / Right | Control-Shift-Command-Left / Right |
+| Cycle | Next / Previous Third | Control-Option-Right / Left |
+| Resize | Make Larger / Smaller | Control-Option-Shift-Right / Left |
+| Displays | Next / Previous Display | Control-Option-Command-Right / Left |
+| History | Undo / Redo | Option-Command-Z / Option-Shift-Command-Z |
+
+Open the menu bar icon and choose **Settings...** to record a different shortcut, disable one action, or restore every default. Changes take effect immediately.
+
+## Privacy And Permissions
+
+PanePilot works locally and does not require an account or network connection. macOS Accessibility permission is required because arranging another app's focused window uses the system Accessibility API.
+
+## Build From Source
+
+PanePilot is a Swift 6.2 package targeting macOS 14 and later.
 
 ```sh
 swift build
@@ -65,39 +68,13 @@ swift test
 make validate-docs
 make verify-hotkey-dispatch
 make verify-window-move
-make app
 make package
 open dist/PanePilot.app
 ```
 
-On first launch, grant PanePilot permission in System Settings -> Privacy & Security -> Accessibility.
-`make verify-hotkey-dispatch` and `make verify-window-move` must run while the Mac is unlocked and a user desktop is active. Hotkey dispatch uses `System Events` as an external keyboard-event injector, so the invoking terminal or Agent must also be allowed to control it; window movement runs against an isolated AppKit fixture.
+The desktop automation checks require an unlocked Mac with an active user session. `make package` creates an ad-hoc signed development artifact; public GitHub Releases use the separate Developer ID signing and notarization workflow documented in [AGENTS.md](AGENTS.md).
 
-## Release notes
+## Acknowledgements
 
-`Scripts/build-app.sh` creates an ad-hoc signed app for local testing and CI artifacts.
-
-Every push or pull request to `main` runs GitHub Actions CI on `macos-26`, validates docs, builds, tests, packages `PanePilot.app`, and uploads the zip as a workflow artifact. These artifacts are not public distribution builds.
-
-Create a signed and notarized GitHub Release locally:
-
-```sh
-make release-tag TAG=v0.1.1
-make verify-release TAG=v0.1.1
-make launch-release TAG=v0.1.1
-```
-
-The release script uses a Developer ID Application certificate, submits the app and DMG to Apple notarization, staples both, validates Gatekeeper, then uploads `PanePilot-vX.Y.Z.dmg` and its sha256 to GitHub Releases.
-
-## Name candidates
-
-- PanePilot
-- Framewise
-- Snapline
-- WindowWing
-- Gridmark
-- QuartzSnap
-- PaneForge
-- Dockless
-- FramePilot
-- TidyPane
+- [Spectacle](https://github.com/eczarny/spectacle) established the direct, keyboard-first workflow that inspired PanePilot.
+- [Rectangle](https://github.com/rxhanson/Rectangle) carries that open-source macOS window-management tradition forward and informed the modern platform baseline.

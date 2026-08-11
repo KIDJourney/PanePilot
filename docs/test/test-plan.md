@@ -16,7 +16,8 @@
 |---|---|---|
 | Swift build | 编译 `PanePilotCore` 和菜单栏 app | `swift build` |
 | Swift tests | `LayoutEngine` 半屏、居中、跨屏行为 | `swift test` |
-| App bundle | 生成 `.app`、Info.plist 和 ad-hoc signature | `make app` |
+| App bundle | 生成带 ICNS 的 `.app`、Info.plist 和 ad-hoc signature | `make app` |
+| Settings snapshot | 从真实 AppKit content view 渲染设置窗口，检查分组、文本和控件边界 | `PANEPILOT_SNAPSHOT_APPEARANCE=light dist/PanePilot.app/Contents/MacOS/PanePilot --automation-preferences-snapshot /tmp/panepilot-settings.png`（`dark` 覆盖深色模式） |
 | Zip package | 生成 GitHub CI artifact zip | `make package` |
 | Hotkey dispatch automation | 构建 release 可执行文件，由独立的 `System Events` 进程注入 `Option-Command-Left`，并断言 Carbon hotkey handler 收到动作 | `make verify-hotkey-dispatch` |
 | Window move automation | 构建 release 可执行文件和真实 AppKit 夹具窗口，执行 `WindowCommander` 并断言夹具窗口通过 AX 移动后恢复原位置 | `make verify-window-move` |
@@ -35,6 +36,8 @@
 3. 半屏、四角、全屏、居中、三分屏符合预期。
 4. 多显示器移动保持大致相对位置。
 5. 撤销 / 重做能恢复最近窗口移动。
+6. 状态栏使用图形图标，菜单分组和右侧快捷键列与设置窗口一致。
+7. 设置窗口在浅色/深色模式下均无溢出或控件重叠，快捷键按钮可录制并逐项清除。
 
 ## 回归要求
 

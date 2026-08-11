@@ -32,8 +32,24 @@
 
 快捷键偏好设置是原生 AppKit utility window：
 
-- 入口在状态栏菜单 `Preferences...`。
-- 主体为两列表格，左侧动作名，右侧当前快捷键或 `Disabled`。
-- 用户先选择动作，再使用 `Record` 录制新快捷键；录制必须包含 Command、Option、Control 或 Shift 至少一个修饰键。
-- `Clear` 禁用当前动作快捷键，`Reset Defaults` 恢复全部默认值。
-- 保存后立即重新注册全局快捷键并刷新状态栏菜单文案。
+![PanePilot settings window](references/panepilot-settings.png)
+
+- 入口在状态栏菜单 `Settings...`，窗口使用 AppIcon 和 `Keyboard Shortcuts` 标题建立清晰层级。
+- 动作按 General、Halves、Corners、Thirds & Sizing、Displays & History 分组，保持与状态栏菜单一致的扫描顺序。
+- 每个动作占一行：左侧是动作名，右侧是符号化快捷键录制按钮和仅图标的清除按钮。
+- 点击当前快捷键直接进入录制；录制必须包含 Command、Option、Control 或 Shift 至少一个修饰键，Escape 取消。
+- 冲突和无修饰键输入在底部状态区反馈；清除只禁用当前动作，`Restore Defaults` 恢复全部默认值。
+- 保存后立即重新注册全局快捷键，并通过 `NSMenuItem.keyEquivalent` 刷新菜单右侧的原生快捷键列。
+
+## PanePilot 状态栏菜单
+
+- 状态栏只显示可模板化的窗格 SF Symbol，不使用产品名文本占用菜单栏空间。
+- 顶部提供 About、Accessibility 状态和 Settings；窗口动作沿用 Spectacle 的直接菜单结构，不隐藏在多层子菜单里。
+- Center/Maximize、Halves、Corners、Thirds/Sizing、Displays、History 之间使用分隔线形成稳定分组。
+- 快捷键使用系统菜单 API 呈现，禁用快捷键时保留动作入口但不显示键位。
+
+## PanePilot AppIcon
+
+- 主体是深石墨色三窗格，绿色目标窗格和浅色方向标识表达“把窗口送到目标区域”。
+- 源图维护在 `Resources/AppIcon.png`，保持透明背景和 1024 x 1024 尺寸。
+- 构建时从同一源图生成全部 macOS iconset 尺寸和 `AppIcon.icns`，避免开发包与 Release 图标漂移。

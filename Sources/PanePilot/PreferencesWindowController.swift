@@ -1,17 +1,34 @@
 import AppKit
+import Carbon
 import PanePilotCore
 
+private final class SettingsBackgroundView: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.windowBackgroundColor.setFill()
+        dirtyRect.fill()
+    }
+}
+
 @MainActor
-final class PreferencesWindowController: NSWindowController, NSWindowDelegate, NSTableViewDataSource, NSTableViewDelegate {
+final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
+    private struct ActionGroup {
+        let title: String
+        let actions: [WindowAction]
+    }
+
     private let store: ShortcutStore
     private let onShortcutsChanged: () -> Void
-    private let actions = WindowAction.menuOrder
-    private let tableView = NSTableView()
-    private let recordButton = NSButton(title: "Record", target: nil, action: nil)
-    private let clearButton = NSButton(title: "Clear", target: nil, action: nil)
-    private let resetButton = NSButton(title: "Reset Defaults", target: nil, action: nil)
-    private let doneButton = NSButton(title: "Done", target: nil, action: nil)
+    private let groups: [ActionGroup] = [
+        .init(title: "GENERAL", actions: [.center, .maximize]),
+        .init(title: "HALVES", actions: [.leftHalf, .rightHalf, .topHalf, .bottomHalf]),
+        .init(title: "CORNERS", actions: [.upperLeft, .lowerLeft, .upperRight, .lowerRight]),
+        .init(title: "THIRDS & SIZING", actions: [.nextThird, .previousThird, .larger, .smaller]),
+        .init(title: "DISPLAYS & HISTORY", actions: [.nextDisplay, .previousDisplay, .undo, .redo])
+    ]
     private let statusLabel = NSTextField(labelWithString: "")
+    private let statusDot = NSView()
+    private var shortcutButtons: [WindowAction: NSButton] = [:]
+    private var clearButtons: [WindowAction: NSButton] = [:]
     private var eventMonitor: Any?
     private var recordingAction: WindowAction?
 
@@ -20,17 +37,20 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         self.onShortcutsChanged = onShortcutsChanged
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 620, height: 500),
-            styleMask: [.titled, .closable, .miniaturizable],
+            contentRect: NSRect(x: 0, y: 0, width: 680, height: 640),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
-        window.title = "PanePilot Shortcuts"
+        window.title = "PanePilot Settings"
+        window.minSize = NSSize(width: 620, height: 520)
+        window.isReleasedWhenClosed = false
         window.center()
+
         super.init(window: window)
         window.delegate = self
         window.contentView = buildContentView()
-        updateSelectionState()
+        refreshRows()
     }
 
     required init?(coder: NSCoder) {
@@ -46,126 +66,294 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         stopRecording()
     }
 
-    func numberOfRows(in tableView: NSTableView) -> Int {
-        actions.count
-    }
-
-    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard row < actions.count, let identifier = tableColumn?.identifier else {
-            return nil
+    func renderSnapshot(to url: URL) -> Bool {
+        guard let contentView = window?.contentView else { return false }
+        contentView.layoutSubtreeIfNeeded()
+        guard let bitmap = contentView.bitmapImageRepForCachingDisplay(in: contentView.bounds) else {
+            return false
         }
-        let action = actions[row]
-        let text: String
-        if identifier.rawValue == "action" {
-            text = action.menuTitle
-        } else {
-            text = store.shortcut(for: action)?.label ?? "Disabled"
+        contentView.cacheDisplay(in: contentView.bounds, to: bitmap)
+        guard let data = bitmap.representation(using: .png, properties: [:]) else {
+            return false
         }
-
-        let cell = NSTableCellView()
-        let label = NSTextField(labelWithString: text)
-        label.lineBreakMode = .byTruncatingTail
-        label.translatesAutoresizingMaskIntoConstraints = false
-        cell.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 8),
-            label.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -8),
-            label.centerYAnchor.constraint(equalTo: cell.centerYAnchor)
-        ])
-        return cell
-    }
-
-    func tableViewSelectionDidChange(_ notification: Notification) {
-        updateSelectionState()
+        do {
+            try data.write(to: url)
+            return true
+        } catch {
+            NSLog("PanePilot could not write settings snapshot: \(error)")
+            return false
+        }
     }
 
     private func buildContentView() -> NSView {
-        let contentView = NSView()
-        let titleLabel = NSTextField(labelWithString: "Keyboard Shortcuts")
-        titleLabel.font = .preferredFont(forTextStyle: .title2)
+        let root = SettingsBackgroundView()
 
-        let subtitleLabel = NSTextField(labelWithString: "Select an action, record a shortcut, or clear one you do not use.")
-        subtitleLabel.textColor = .secondaryLabelColor
+        let header = buildHeader()
+        let headerSeparator = separator()
+        let scrollView = buildShortcutList()
+        let footerSeparator = separator()
+        let footer = buildFooter()
 
-        tableView.headerView = nil
-        tableView.usesAlternatingRowBackgroundColors = true
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.allowsMultipleSelection = false
-        tableView.rowHeight = 32
-        let actionColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("action"))
-        actionColumn.title = "Action"
-        actionColumn.width = 250
-        let shortcutColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("shortcut"))
-        shortcutColumn.title = "Shortcut"
-        shortcutColumn.width = 300
-        tableView.addTableColumn(actionColumn)
-        tableView.addTableColumn(shortcutColumn)
-
-        let scrollView = NSScrollView()
-        scrollView.documentView = tableView
-        scrollView.hasVerticalScroller = true
-        scrollView.borderType = .bezelBorder
-
-        for button in [recordButton, clearButton, resetButton, doneButton] {
-            button.bezelStyle = .rounded
-            button.translatesAutoresizingMaskIntoConstraints = false
+        for view in [header, headerSeparator, scrollView, footerSeparator, footer] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            root.addSubview(view)
         }
-        recordButton.target = self
-        recordButton.action = #selector(recordSelectedShortcut)
-        clearButton.target = self
-        clearButton.action = #selector(clearSelectedShortcut)
-        resetButton.target = self
-        resetButton.action = #selector(resetShortcuts)
-        doneButton.target = self
-        doneButton.action = #selector(done)
 
+        NSLayoutConstraint.activate([
+            header.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            header.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            header.topAnchor.constraint(equalTo: root.topAnchor),
+            header.heightAnchor.constraint(equalToConstant: 78),
+
+            headerSeparator.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            headerSeparator.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            headerSeparator.topAnchor.constraint(equalTo: header.bottomAnchor),
+
+            scrollView.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: headerSeparator.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: footerSeparator.topAnchor),
+
+            footerSeparator.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            footerSeparator.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            footerSeparator.bottomAnchor.constraint(equalTo: footer.topAnchor),
+
+            footer.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            footer.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            footer.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            footer.heightAnchor.constraint(equalToConstant: 58)
+        ])
+
+        return root
+    }
+
+    private func buildHeader() -> NSView {
+        let header = NSView()
+
+        let iconView = NSImageView()
+        iconView.image = NSApp.applicationIconImage ?? NSImage(systemSymbolName: "rectangle.3.group", accessibilityDescription: "PanePilot")
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+
+        let titleLabel = NSTextField(labelWithString: "Keyboard Shortcuts")
+        titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
+
+        let textStack = NSStackView(views: [titleLabel])
+        textStack.orientation = .vertical
+        textStack.alignment = .leading
+
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        textStack.translatesAutoresizingMaskIntoConstraints = false
+        header.addSubview(iconView)
+        header.addSubview(textStack)
+
+        NSLayoutConstraint.activate([
+            iconView.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 24),
+            iconView.centerYAnchor.constraint(equalTo: header.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 52),
+            iconView.heightAnchor.constraint(equalToConstant: 52),
+            textStack.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 14),
+            textStack.trailingAnchor.constraint(lessThanOrEqualTo: header.trailingAnchor, constant: -24),
+            textStack.centerYAnchor.constraint(equalTo: header.centerYAnchor)
+        ])
+
+        return header
+    }
+
+    private func buildShortcutList() -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .noBorder
+
+        let stack = NSStackView()
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 16
+        stack.edgeInsets = NSEdgeInsets(top: 18, left: 24, bottom: 20, right: 24)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        for group in groups {
+            stack.addArrangedSubview(buildGroup(group))
+        }
+
+        scrollView.documentView = stack
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            stack.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor)
+        ])
+        return scrollView
+    }
+
+    private func buildGroup(_ group: ActionGroup) -> NSView {
+        let section = NSStackView()
+        section.orientation = .vertical
+        section.alignment = .leading
+        section.spacing = 0
+
+        let title = NSTextField(labelWithString: group.title)
+        title.font = .systemFont(ofSize: 11, weight: .semibold)
+        title.textColor = .secondaryLabelColor
+        title.translatesAutoresizingMaskIntoConstraints = false
+        section.addArrangedSubview(title)
+        section.setCustomSpacing(7, after: title)
+
+        for (index, action) in group.actions.enumerated() {
+            if index > 0 {
+                let rowSeparator = separator()
+                section.addArrangedSubview(rowSeparator)
+                rowSeparator.widthAnchor.constraint(equalTo: section.widthAnchor).isActive = true
+            }
+            let row = buildActionRow(action)
+            section.addArrangedSubview(row)
+            row.widthAnchor.constraint(equalTo: section.widthAnchor).isActive = true
+        }
+
+        return section
+    }
+
+    private func buildActionRow(_ action: WindowAction) -> NSView {
+        let row = NSView()
+        row.translatesAutoresizingMaskIntoConstraints = false
+
+        let actionLabel = NSTextField(labelWithString: action.menuTitle)
+        actionLabel.font = .systemFont(ofSize: 13)
+        actionLabel.lineBreakMode = .byTruncatingTail
+
+        let shortcutButton = NSButton(title: "", target: self, action: #selector(beginRecording(_:)))
+        shortcutButton.bezelStyle = .rounded
+        shortcutButton.controlSize = .regular
+        shortcutButton.font = .monospacedSystemFont(ofSize: 13, weight: .medium)
+        shortcutButton.tag = actionIndex(action)
+        shortcutButton.toolTip = "Record a shortcut for \(action.menuTitle)"
+        shortcutButtons[action] = shortcutButton
+
+        let clearButton = NSButton(
+            image: NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Clear \(action.menuTitle)") ?? NSImage(),
+            target: self,
+            action: #selector(clearShortcut(_:))
+        )
+        clearButton.bezelStyle = .inline
+        clearButton.isBordered = false
+        clearButton.imagePosition = .imageOnly
+        clearButton.contentTintColor = .tertiaryLabelColor
+        clearButton.tag = actionIndex(action)
+        clearButton.toolTip = "Disable the shortcut for \(action.menuTitle)"
+        clearButtons[action] = clearButton
+
+        for view in [actionLabel, shortcutButton, clearButton] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            row.addSubview(view)
+        }
+
+        NSLayoutConstraint.activate([
+            row.heightAnchor.constraint(equalToConstant: 42),
+            actionLabel.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+            actionLabel.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            actionLabel.trailingAnchor.constraint(lessThanOrEqualTo: shortcutButton.leadingAnchor, constant: -16),
+            shortcutButton.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            shortcutButton.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: -6),
+            shortcutButton.widthAnchor.constraint(equalToConstant: 142),
+            shortcutButton.heightAnchor.constraint(equalToConstant: 28),
+            clearButton.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+            clearButton.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            clearButton.widthAnchor.constraint(equalToConstant: 24),
+            clearButton.heightAnchor.constraint(equalToConstant: 24)
+        ])
+
+        return row
+    }
+
+    private func buildFooter() -> NSView {
+        let footer = NSView()
+
+        let restoreButton = NSButton(
+            title: "Restore Defaults",
+            image: NSImage(systemSymbolName: "arrow.counterclockwise", accessibilityDescription: nil) ?? NSImage(),
+            target: self,
+            action: #selector(resetShortcuts)
+        )
+        restoreButton.bezelStyle = .rounded
+        restoreButton.imagePosition = .imageLeading
+
+        statusDot.wantsLayer = true
+        statusDot.layer?.cornerRadius = 4
+        statusDot.layer?.backgroundColor = NSColor.systemGreen.cgColor
+
+        statusLabel.font = .systemFont(ofSize: 12)
         statusLabel.textColor = .secondaryLabelColor
         statusLabel.lineBreakMode = .byTruncatingTail
 
-        let buttonStack = NSStackView(views: [recordButton, clearButton, resetButton, NSView(), doneButton])
-        buttonStack.orientation = .horizontal
-        buttonStack.spacing = 8
-        buttonStack.distribution = .fill
+        let helpButton = NSButton(
+            image: NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: "Open PanePilot help") ?? NSImage(),
+            target: self,
+            action: #selector(openHelp)
+        )
+        helpButton.bezelStyle = .inline
+        helpButton.isBordered = false
+        helpButton.imagePosition = .imageOnly
+        helpButton.toolTip = "Open PanePilot help"
 
-        let stack = NSStackView(views: [titleLabel, subtitleLabel, scrollView, statusLabel, buttonStack])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 10
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(stack)
+        for view in [restoreButton, statusDot, statusLabel, helpButton] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            footer.addSubview(view)
+        }
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 18),
-            stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
-            scrollView.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            scrollView.heightAnchor.constraint(equalToConstant: 340),
-            statusLabel.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            buttonStack.widthAnchor.constraint(equalTo: stack.widthAnchor)
+            restoreButton.leadingAnchor.constraint(equalTo: footer.leadingAnchor, constant: 20),
+            restoreButton.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
+            statusDot.leadingAnchor.constraint(greaterThanOrEqualTo: restoreButton.trailingAnchor, constant: 16),
+            statusDot.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
+            statusDot.widthAnchor.constraint(equalToConstant: 8),
+            statusDot.heightAnchor.constraint(equalToConstant: 8),
+            statusLabel.leadingAnchor.constraint(equalTo: statusDot.trailingAnchor, constant: 7),
+            statusLabel.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
+            statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: helpButton.leadingAnchor, constant: -12),
+            helpButton.trailingAnchor.constraint(equalTo: footer.trailingAnchor, constant: -18),
+            helpButton.centerYAnchor.constraint(equalTo: footer.centerYAnchor),
+            helpButton.widthAnchor.constraint(equalToConstant: 24),
+            helpButton.heightAnchor.constraint(equalToConstant: 24)
         ])
 
-        return contentView
+        return footer
     }
 
-    @objc private func recordSelectedShortcut() {
-        guard let action = selectedAction else { return }
+    private func separator() -> NSBox {
+        let separator = NSBox()
+        separator.boxType = .separator
+        return separator
+    }
+
+    private func actionIndex(_ action: WindowAction) -> Int {
+        WindowAction.menuOrder.firstIndex(of: action) ?? -1
+    }
+
+    private func action(for sender: NSButton) -> WindowAction? {
+        guard sender.tag >= 0, sender.tag < WindowAction.menuOrder.count else { return nil }
+        return WindowAction.menuOrder[sender.tag]
+    }
+
+    @objc private func beginRecording(_ sender: NSButton) {
+        guard let action = action(for: sender) else { return }
+        stopRecording(keepMessage: true)
         recordingAction = action
-        statusLabel.stringValue = "Press a new shortcut for \(action.menuTitle). Use at least one modifier."
-        recordButton.title = "Press Shortcut..."
-        recordButton.isEnabled = false
-        clearButton.isEnabled = false
+        refreshRows()
+        shortcutButtons[action]?.title = "Type shortcut..."
+        statusLabel.stringValue = "Recording \(action.menuTitle). Press Escape to cancel."
+        statusDot.layer?.backgroundColor = NSColor.systemOrange.cgColor
+
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.capture(event)
             return nil
         }
     }
 
-    @objc private func clearSelectedShortcut() {
-        guard let action = selectedAction else { return }
+    @objc private func clearShortcut(_ sender: NSButton) {
+        guard let action = action(for: sender) else { return }
         store.clear(action)
-        applyShortcutChange(message: "\(action.menuTitle) disabled.")
+        applyShortcutChange(message: "\(action.menuTitle) is disabled.")
     }
 
     @objc private func resetShortcuts() {
@@ -173,35 +361,44 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         applyShortcutChange(message: "Default shortcuts restored.")
     }
 
-    @objc private func done() {
-        close()
+    @objc private func openHelp() {
+        guard let url = URL(string: "https://github.com/KIDJourney/PanePilot#quick-start") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     private func capture(_ event: NSEvent) {
         guard let action = recordingAction else { return }
-        guard let shortcut = KeyboardShortcut(action: action, event: event) else {
-            NSSound.beep()
-            statusLabel.stringValue = "Shortcut must include Command, Option, Control, or Shift."
-            stopRecording(keepMessage: true)
+        if event.keyCode == kVK_Escape && event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty {
+            stopRecording()
             return
         }
-        if let conflict = actions.first(where: { candidate in
-            candidate != action && store.shortcut(for: candidate).map { $0.keyCode == shortcut.keyCode && $0.modifiers == shortcut.modifiers } == true
+        guard let shortcut = KeyboardShortcut(action: action, event: event) else {
+            NSSound.beep()
+            statusLabel.stringValue = "Use Command, Option, Control, or Shift in the shortcut."
+            stopRecording(keepMessage: true)
+            statusDot.layer?.backgroundColor = NSColor.systemRed.cgColor
+            return
+        }
+        if let conflict = WindowAction.menuOrder.first(where: { candidate in
+            candidate != action
+                && store.shortcut(for: candidate).map {
+                    $0.keyCode == shortcut.keyCode && $0.modifiers == shortcut.modifiers
+                } == true
         }) {
             NSSound.beep()
-            statusLabel.stringValue = "\(shortcut.label) is already used by \(conflict.menuTitle)."
+            statusLabel.stringValue = "\(shortcut.symbolicLabel) is already used by \(conflict.menuTitle)."
             stopRecording(keepMessage: true)
+            statusDot.layer?.backgroundColor = NSColor.systemRed.cgColor
             return
         }
         store.set(shortcut, for: action)
-        applyShortcutChange(message: "\(action.menuTitle) set to \(shortcut.label).")
+        applyShortcutChange(message: "\(action.menuTitle) is now \(shortcut.symbolicLabel).")
     }
 
     private func applyShortcutChange(message: String) {
         stopRecording(keepMessage: true)
         statusLabel.stringValue = message
-        tableView.reloadData()
-        updateSelectionState()
+        refreshRows(preserveStatus: true)
         onShortcutsChanged()
     }
 
@@ -211,24 +408,63 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate, N
         }
         eventMonitor = nil
         recordingAction = nil
-        recordButton.title = "Record"
-        if !keepMessage {
-            statusLabel.stringValue = ""
-        }
-        updateSelectionState()
+        refreshRows(preserveStatus: keepMessage)
     }
 
-    private func updateSelectionState() {
-        let hasSelection = selectedAction != nil && recordingAction == nil
-        recordButton.isEnabled = hasSelection
-        clearButton.isEnabled = hasSelection
-    }
-
-    private var selectedAction: WindowAction? {
-        let row = tableView.selectedRow
-        guard row >= 0, row < actions.count else {
-            return nil
+    private func refreshRows(preserveStatus: Bool = false) {
+        for action in WindowAction.menuOrder {
+            let shortcut = store.shortcut(for: action)
+            shortcutButtons[action]?.title = shortcut?.symbolicLabel ?? "Set Shortcut"
+            shortcutButtons[action]?.contentTintColor = shortcut == nil ? .secondaryLabelColor : .controlTextColor
+            clearButtons[action]?.isEnabled = shortcut != nil
         }
-        return actions[row]
+
+        if !preserveStatus {
+            let activeCount = store.resolvedShortcuts().count
+            statusLabel.stringValue = activeCount == WindowAction.menuOrder.count
+                ? "All shortcuts are active"
+                : "\(activeCount) of \(WindowAction.menuOrder.count) shortcuts active"
+        }
+        statusDot.layer?.backgroundColor = recordingAction == nil
+            ? NSColor.systemGreen.cgColor
+            : NSColor.systemOrange.cgColor
+    }
+}
+
+@MainActor
+enum PreferencesSnapshotAutomation {
+    static func run(path: String) -> Int32 {
+        let app = NSApplication.shared
+        switch ProcessInfo.processInfo.environment["PANEPILOT_SNAPSHOT_APPEARANCE"] {
+        case "light": app.appearance = NSAppearance(named: .aqua)
+        case "dark": app.appearance = NSAppearance(named: .darkAqua)
+        default: break
+        }
+        app.setActivationPolicy(.regular)
+        app.finishLaunching()
+
+        let suiteName = "dev.panepilot.snapshot.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            print("PanePilot settings snapshot failed: could not create isolated preferences.")
+            return 2
+        }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let controller = PreferencesWindowController(store: ShortcutStore(defaults: defaults)) {}
+        if ProcessInfo.processInfo.environment["PANEPILOT_SNAPSHOT_SIZE"] == "minimum" {
+            controller.window?.setContentSize(NSSize(width: 620, height: 520))
+        }
+        controller.showWindow(nil)
+        controller.window?.makeKeyAndOrderFront(nil)
+        app.activate()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.35))
+
+        let outputURL = URL(fileURLWithPath: path)
+        guard controller.renderSnapshot(to: outputURL) else {
+            print("PanePilot settings snapshot failed: could not render \(path).")
+            return 3
+        }
+        print("PanePilot settings snapshot written to \(path)")
+        return 0
     }
 }

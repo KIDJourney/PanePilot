@@ -25,14 +25,15 @@ Global hotkey / Status menu
 | `Sources/PanePilotCore/WindowAction.swift` | 窗口动作枚举和菜单标题 |
 | `Sources/PanePilotCore/LayoutEngine.swift` | 纯几何布局计算，可单测 |
 | `Sources/PanePilot/main.swift` | AppKit app 入口，设置 accessory activation policy |
-| `Sources/PanePilot/AppDelegate.swift` | 状态栏菜单、命令绑定、启动时注册快捷键 |
+| `Sources/PanePilot/AppDelegate.swift` | 图形状态栏入口、分组原生菜单、命令绑定、启动时注册快捷键 |
 | `Sources/PanePilot/HotKeyManager.swift` | Carbon `RegisterEventHotKey` 全局快捷键 |
 | `Sources/PanePilot/ShortcutStore.swift` | 用户快捷键覆盖、禁用状态和默认值合并 |
-| `Sources/PanePilot/PreferencesWindowController.swift` | 快捷键偏好设置窗口、录制和冲突检查 |
+| `Sources/PanePilot/PreferencesWindowController.swift` | 分组快捷键设置窗口、逐行录制/清除、冲突检查和截图自动化 |
 | `Sources/PanePilot/AccessibilityWindowClient.swift` | Accessibility 权限、聚焦窗口读取和窗口位置写入 |
 | `Sources/PanePilot/WindowCommander.swift` | 命令编排、撤销/重做历史 |
 | `Sources/PanePilot/AutomationWindowMoveTest.swift` | 本地真实桌面窗口移动自动化入口 |
-| `Scripts/build-app.sh` | release build、bundle Info.plist、ad-hoc signing |
+| `Resources/AppIcon.png` | 透明 1024 px AppIcon 源图 |
+| `Scripts/build-app.sh` | release build、从源图生成 ICNS、bundle Info.plist、ad-hoc signing |
 | `Scripts/package-app.sh` | 生成 GitHub artifact / release zip |
 | `Scripts/release-local.sh` | Developer ID 签名、公证、staple、DMG 和 GitHub Release 上传 |
 | `Scripts/release-tag.sh` | 高层正式发布入口，可复用 notary profile |
