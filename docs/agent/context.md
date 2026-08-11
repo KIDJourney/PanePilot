@@ -22,6 +22,7 @@ PanePilot 当前是 v0.1 初版：Swift 6.2、macOS 14+、Apple Silicon 优先�
 - 初始化 AI Workspace 文档结构。
 - 添加 GitHub Actions CI。
 - 添加 Developer ID signed + notarized GitHub Release 脚本。
+- 发布 `v0.1.1` signed DMG：App/DMG 均已 notarized + stapled，Gatekeeper 验证和最终 DMG 启动验证通过。
 
 ## 下一步
 
