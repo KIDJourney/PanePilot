@@ -1,10 +1,18 @@
-.PHONY: build test verify-hotkey-dispatch verify-shortcut-recording verify-window-move verify-login-item verify-update-helper app package release release-tag verify-release launch-release validate-docs clean
+.PHONY: build test local-check install-hooks verify-hotkey-dispatch verify-shortcut-recording verify-window-move verify-login-item verify-update-helper app package release release-tag verify-release launch-release validate-docs clean
 
 build:
 	swift build
 
 test:
 	swift test
+
+local-check:
+	Scripts/local-change-check.sh
+
+install-hooks:
+	git config core.hooksPath .githooks
+	chmod +x .githooks/pre-commit Scripts/local-change-check.sh
+	@echo "Local git hooks installed."
 
 verify-hotkey-dispatch:
 	Scripts/verify-window-automation.sh dispatch

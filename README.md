@@ -74,6 +74,8 @@ PanePilot is a Swift 6.2 package targeting macOS 14 and later.
 swift build
 swift test
 make validate-docs
+make install-hooks
+make local-check
 make verify-hotkey-dispatch
 make verify-shortcut-recording
 make verify-window-move
@@ -82,7 +84,7 @@ make package
 open dist/PanePilot.app
 ```
 
-The desktop automation checks require an unlocked Mac with an active user session. `make package` creates an ad-hoc signed development artifact; public GitHub Releases use the separate Developer ID signing and notarization workflow documented in [AGENTS.md](AGENTS.md).
+The desktop automation checks require an unlocked Mac with an active user session. `make install-hooks` enables the repository's local pre-commit build, test, and package gate. `make package` creates an ad-hoc signed development artifact; public GitHub Releases are also built, Developer ID signed, notarized, and verified entirely on the local Mac before upload, as documented in [AGENTS.md](AGENTS.md). GitHub Actions is not used.
 
 ## Acknowledgements
 

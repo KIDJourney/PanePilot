@@ -74,6 +74,8 @@ PanePilot 使用 Swift 6.2，支持 macOS 14 或更高版本。
 swift build
 swift test
 make validate-docs
+make install-hooks
+make local-check
 make verify-hotkey-dispatch
 make verify-shortcut-recording
 make verify-window-move
@@ -82,7 +84,7 @@ make package
 open dist/PanePilot.app
 ```
 
-桌面自动化检查需要 Mac 处于解锁状态，并且有活跃的用户桌面。`make package` 生成用于开发预览的 ad-hoc 签名产物；公开 GitHub Release 使用 [AGENTS.md](AGENTS.md) 中约定的 Developer ID 签名与公证流程。
+桌面自动化检查需要 Mac 处于解锁状态，并且有活跃的用户桌面。`make install-hooks` 会启用仓库内置的本地提交前构建、测试和打包门禁。`make package` 生成用于开发预览的 ad-hoc 签名产物；公开 GitHub Release 也全部在本机完成构建、Developer ID 签名、公证和验证后再上传，具体流程见 [AGENTS.md](AGENTS.md)。项目不使用 GitHub Actions。
 
 ## 鸣谢
 

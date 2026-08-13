@@ -5,8 +5,8 @@
 ## 测试目标
 
 1. 确认纯布局计算稳定，避免坐标和可见区域回归。
-2. 确认 Swift package 可以在本地和 GitHub Actions 构建。
-3. 确认每次代码变更都能自动生成可下载 app zip。
+2. 确认 Swift package 可以完全在本机构建。
+3. 确认每次提交前都能在本机自动生成 app zip。
 4. 确认 AI Workspace 文档结构和链接持续有效。
 5. 确认全局快捷键在真实桌面中能触发并移动窗口。
 6. 确认登录项状态映射稳定，并能在隔离测试 App 中真实注册和注销。
@@ -20,7 +20,7 @@
 | Swift tests | `LayoutEngine`、多显示器坐标和选屏、登录项状态映射，以及更新版本比较和每日中午调度 | `swift test` |
 | App bundle | 生成带 ICNS 的 `.app`、Info.plist 和 ad-hoc signature | `make app` |
 | Settings snapshot | 从真实 AppKit content view 渲染设置窗口，检查分组、文本和控件边界 | `PANEPILOT_SNAPSHOT_APPEARANCE=light dist/PanePilot.app/Contents/MacOS/PanePilot --automation-preferences-snapshot /tmp/panepilot-settings.png`（`dark` 覆盖深色模式） |
-| Zip package | 生成 GitHub CI artifact zip | `make package` |
+| Zip package | 在本机生成 ad-hoc 预览 zip | `make package` |
 | Hotkey dispatch automation | 构建 release 可执行文件，由独立的 `System Events` 进程注入 `Option-Command-Left`，并断言 Carbon hotkey handler 收到动作 | `make verify-hotkey-dispatch` |
 | Shortcut recording automation | 录制期间注入快捷键并断言无动作，结束录制后再次注入并断言恢复分发 | `make verify-shortcut-recording` |
 | Window move automation | 构建 release 可执行文件和真实 AppKit 夹具窗口，执行 `WindowCommander` 并断言夹具窗口通过 AX 移动后恢复原位置 | `make verify-window-move` |
@@ -30,7 +30,7 @@
 | Release verification | 下载 GitHub Release DMG，校验 sha256、公证和 Gatekeeper | `make verify-release TAG=vx.y.z` |
 | Launch verification | 从最终 DMG 启动 App 并确认进程存活 | `make launch-release TAG=vx.y.z` |
 | 文档结构检查 | 根目录入口、关键目录、Markdown 链接 | `make validate-docs` |
-| GitHub CI | push / PR 自动运行验证和打包 | `.github/workflows/ci.yml` |
+| Local commit gate | commit 前自动运行文档验证、构建、测试、打包和签名检查 | `make install-hooks`、`make local-check` |
 
 ## 手工验收
 
@@ -59,7 +59,7 @@
 - 修改 hotkey 注册。
 - 修改登录项注册、状态映射或设置开关。
 - 修改更新检查、下载验证或替换助手。
-- 修改打包脚本或 GitHub Actions workflow。
+- 修改打包脚本、本地 hook 或本地门禁。
 - 新增、移动或删除 Markdown 文件。
 
 正式发布前还必须执行 `make release-tag TAG=vx.y.z`、`make verify-release TAG=vx.y.z` 和 `make launch-release TAG=vx.y.z`。

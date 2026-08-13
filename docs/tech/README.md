@@ -12,6 +12,6 @@
 ## 维护规则
 
 1. 架构、目录职责、接口、数据、依赖变化，更新 [architecture.md](architecture.md)。
-2. 本地命令、验证流程、CI 或自动化变化，更新 [operations.md](operations.md)。
+2. 本地命令、验证流程或自动化变化，更新 [operations.md](operations.md)。
 3. 技术决策需要能被未来复盘时，额外记录到 `docs/agent/decisions.md`。
 4. 测试结果和验收证据不写在这里，写到 `docs/verification/verification-log.md`。

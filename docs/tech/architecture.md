@@ -52,12 +52,13 @@ Daily noon / Check for Updates menu
 | `Resources/AppIcon.png` | 透明 1024 px AppIcon 源图 |
 | `Resources/install-update.sh` | App 退出后同目录分阶段替换、启动新版并在失败时回滚 |
 | `Scripts/build-app.sh` | release build、从源图生成 ICNS、bundle Info.plist、ad-hoc signing |
-| `Scripts/package-app.sh` | 生成 GitHub artifact / release zip |
+| `Scripts/package-app.sh` | 在本机生成 ad-hoc 预览 zip |
+| `Scripts/local-change-check.sh` | 本地提交前的文档校验、构建、测试、打包和签名检查 |
 | `Scripts/release-local.sh` | Developer ID 签名、公证、staple、DMG 和 GitHub Release 上传 |
 | `Scripts/release-tag.sh` | 高层正式发布入口，可复用 notary profile |
 | `Scripts/verify-release.sh` | 下载 GitHub Release DMG 并校验 sha256、公证和 Gatekeeper |
 | `Scripts/launch-release-app.sh` | 从最终 DMG 启动 App 并验证进程存活 |
-| `.github/workflows/ci.yml` | push / PR 自动验证、构建、测试、打包 |
+| `.githooks/pre-commit` | 每次本地 commit 前调用完整本地变更门禁 |
 
 ## 坐标系统
 
@@ -71,13 +72,13 @@ Center、Half、Corner、Third 和 Sizing 的目标 frame 始终来自当前窗�
 
 ## 权限和发布
 
-PanePilot 需要 macOS Accessibility 权限才能控制其他 App 的窗口。登录时启动使用 macOS 13+ 的 `SMAppService.mainApp`，不安装辅助程序；系统返回 `requiresApproval` 时由用户在“系统设置 > 通用 > 登录项与扩展”中批准。更新检查只访问 `api.github.com/repos/KIDJourney/PanePilot/releases/latest` 和该 Release 的资产 URL，不上传设置或窗口数据。当前本地和 CI 快速产物使用 ad-hoc signing，仅用于开发和预览；登录项真实系统测试和正式 GitHub Release 使用 Developer ID 签名，Release 还会完成公证和 stapling。
+PanePilot 需要 macOS Accessibility 权限才能控制其他 App 的窗口。登录时启动使用 macOS 13+ 的 `SMAppService.mainApp`，不安装辅助程序；系统返回 `requiresApproval` 时由用户在“系统设置 > 通用 > 登录项与扩展”中批准。更新检查只访问 `api.github.com/repos/KIDJourney/PanePilot/releases/latest` 和该 Release 的资产 URL，不上传设置或窗口数据。本地快速产物使用 ad-hoc signing，仅用于开发和预览；登录项真实系统测试和正式 GitHub Release 使用 Developer ID 签名，Release 还会完成公证和 stapling。
 
 自更新只接受版本号更高且包含精确命名 DMG/sha256 的 latest Release。安装前同时校验 sha256、DMG stapling、DMG 和 App Gatekeeper、bundle ID/版本，以及候选 App 与当前 App 的 signing identifier 和 Team ID。候选包先复制进权限为 `0700` 的临时目录并复验签名；外部助手在 App 退出后执行同目录原子替换，若新版无法启动则恢复旧版。
 
-## CI / Release
+## 本地自动化 / Release
 
-CI 运行在 `macos-26`，这是 GitHub hosted runners 的标准 Apple Silicon macOS 26 label。项目使用 Swift 6.2 且目标是现代 Apple Silicon macOS。普通代码变更通过 `ci.yml` 上传 ad-hoc zip artifact；正式 GitHub Release 由本地 `make release-tag TAG=vx.y.z` 创建签名公证 DMG。
+项目不使用 GitHub Actions。首次 clone 运行 `make install-hooks` 后，每次 commit 都由 `.githooks/pre-commit` 在当前 Mac 执行 `make local-check`，生成不提交到 git 的 ad-hoc zip。正式 GitHub Release 由本地 `make release-tag TAG=vx.y.z` 创建签名公证 DMG；GitHub 仅接收本机已完成的 tag、DMG 和 sha256。
 
 ## 技术风险
 

@@ -19,7 +19,7 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 1. Spectacle 已不再活跃维护，旧 Objective-C/Carthage 工程不适合直接延续。
 2. 新 macOS 对辅助功能权限、签名、公证和自动化发布有更明确要求。
 3. 窗口管理工具必须可靠处理多显示器、可见区域、菜单栏/Dock 和撤销重做。
-4. 每次代码变更都需要自动化打包，避免本地手工构建造成 release 漂移。
+4. 每次提交都需要在本机自动验证和打包，避免手工构建造成 release 漂移，且不依赖 GitHub 托管构建能力。
 
 ## 当前版本范围
 
@@ -35,7 +35,7 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 | 多显示器移动 | 在显示器之间移动窗口并保持相对位置 | 已完成初版 |
 | 撤销 / 重做 | 记录窗口移动历史并恢复 | 已完成初版 |
 | 本地打包 | 生成 ad-hoc signed `.app` 和 zip 包 | 已完成初版 |
-| GitHub CI | 每次 push / PR 自动验证、构建、测试、打包 artifact | 已完成初版 |
+| 本地提交门禁 | 每次 commit 前自动验证文档、构建、测试并生成 ad-hoc zip | 已完成 |
 | GitHub Release | 本地 release 脚本生成签名公证 DMG 并上传 GitHub Release | 已完成初版 |
 
 ## 当前不做
@@ -43,7 +43,7 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 | 范围 | 说明 |
 |---|---|
 | 拖拽吸附 | 第一版聚焦快捷键窗口管理，不追 Rectangle 的 snap areas |
-| GitHub Actions 签名发布 | 当前正式发布依赖本机 Developer ID 证书；CI 只做 ad-hoc artifact |
+| GitHub 托管构建 | 构建、测试、打包、签名和公证全部在本机完成 |
 | App Store 发布 | 窗口管理工具依赖 Accessibility 权限，当前目标是 GitHub Release |
 
 ## 用户故事
@@ -51,7 +51,7 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器。它复刻 S
 1. 作为 Spectacle 老用户，我希望沿用熟悉快捷键，把窗口移动到半屏、四角或全屏。
 2. 作为多显示器用户，我希望能用快捷键把当前窗口移动到下一块显示器。
 3. 作为键盘用户，我希望窗口操作可撤销，误触后能快速恢复。
-4. 作为维护者，我希望每次代码变更都自动生成可下载构建产物。
+4. 作为维护者，我希望每次提交都在本机自动生成可验证的构建产物。
 5. 作为发布者，我希望一条命令生成签名、公证、可通过 Gatekeeper 的 GitHub Release。
 6. 作为日常用户，我希望 PanePilot 登录后自动启动，不必每次手动打开。
 7. 作为日常用户，我希望 PanePilot 每天自动发现正式新版本，并在我确认后安全完成升级。

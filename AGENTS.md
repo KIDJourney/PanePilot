@@ -4,7 +4,7 @@
 
 ## 项目定位
 
-PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器，目标是复刻 Spectacle 的核心键盘窗口布局体验，并适配 Apple Silicon、新 macOS、GitHub Actions 自动打包和 GitHub Release 发布。
+PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器，目标是复刻 Spectacle 的核心键盘窗口布局体验，并适配 Apple Silicon、新 macOS、本地自动打包和 GitHub Release 发布。
 
 ## 权威文档
 
@@ -14,7 +14,7 @@ PanePilot 是一个现代 Swift 版 macOS 菜单栏窗口管理器，目标是�
 | 写产品需求、改功能范围 | `docs/product/README.md`、`docs/product/prd.md` |
 | 做设计、交互或 UI | `docs/design/README.md`、`docs/design/ui-guidelines.md` |
 | 做架构或技术实现 | `docs/tech/README.md`、`docs/tech/architecture.md` |
-| 做打包、CI 或 Release | `docs/tech/operations.md`、`.github/workflows/` |
+| 做打包、本地自动化或 Release | `docs/tech/operations.md`、`Scripts/`、`.githooks/` |
 | 写测试方案或验收标准 | `docs/test/README.md`、`docs/test/test-plan.md` |
 | 按业务场景验证结果 | `docs/verification/README.md`、`docs/verification/scenarios.md` |
 | 恢复 agent 工作上下文 | `docs/agent/context.md`、`docs/agent/decisions.md` |
@@ -64,6 +64,8 @@ scripts/
 ```bash
 swift build
 swift test
+make install-hooks
+make local-check
 make package
 make validate-docs
 tree -a -L 3 -I '.git|node_modules|dist|build' .
@@ -72,7 +74,9 @@ rg "TODO|待确认|阻塞" docs
 
 ## 发布完成门禁
 
-- GitHub Actions 上传的 ad-hoc zip artifact 只是每次变更的 CI 预览产物，不等同于 GitHub Release。
+- 禁止使用 GitHub Actions 或其他 GitHub 托管能力执行构建、测试、打包、签名或公证；这些步骤全部在本机完成。
+- 首次 clone 后运行 `make install-hooks`。每次 commit 前，本地 hook 必须通过文档校验、build、test 和 ad-hoc zip 打包；`dist/` 产物不提交到 git。
+- GitHub 只托管源码、tag 和已在本机完成并验证的正式 Release 资产。
 - 任务明确要求“发布”或“Release”时，必须按 `docs/tech/operations.md` 依次执行 `make release-tag TAG=vx.y.z`、`make verify-release TAG=vx.y.z` 和 `make launch-release TAG=vx.y.z`。
 - 只有远端 tag 与目标 commit 一致、`gh release view` 可见正式 DMG 和 sha256、下载校验与最终 DMG 启动验证全部通过后，才可以报告 Release 已完成。
 

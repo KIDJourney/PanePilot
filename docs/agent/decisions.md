@@ -2,6 +2,17 @@
 
 本文档记录影响未来工作的设计决策。新增重大决策时，按模板追加到最上方或创建独立 ADR 文件。
 
+## DEC-0006: 所有构建和发布产物只在本机生成
+
+| 字段 | 内容 |
+|---|---|
+| 日期 | 2026-08-13 |
+| 状态 | 已接受，取代 DEC-0003 的 GitHub Actions 决策 |
+| 背景 | 用户明确要求不使用 GitHub 的构建和打包能力，所有产物都放到本地生成 |
+| 决策 | 删除 GitHub Actions workflow；版本化 `.githooks/pre-commit` 在每次提交前执行文档校验、build、test 和 ad-hoc zip 打包；正式 DMG 继续在本机签名、公证、验证后上传 GitHub Release |
+| 理由 | 构建、证书和 Apple 公证链集中在受控本机，避免托管 runner、Secrets 和远端构建环境参与产物生成 |
+| 影响 | 首次 clone 必须运行 `make install-hooks`；本地门禁失败时不能提交；GitHub 只保存源码、tag 和已经在本机完成的 Release 资产 |
+
 ## DEC-0005: 自更新只安装同签名身份的正式 GitHub Release
 
 | 字段 | 内容 |
@@ -19,17 +30,17 @@
 |---|---|
 | 日期 | 2026-08-11 |
 | 状态 | 已接受 |
-| 背景 | GitHub Actions 的 ad-hoc zip 不能作为公开分发包；用户要求参考 SpeakMore 给 PanePilot 做 Apple 签名 |
-| 决策 | 普通 CI 继续上传 ad-hoc artifact；正式 GitHub Release 由本机 `make release-tag TAG=vx.y.z` 创建 Developer ID signed、notarized、stapled DMG |
+| 背景 | ad-hoc zip 不能作为公开分发包；用户要求参考 SpeakMore 给 PanePilot 做 Apple 签名 |
+| 决策 | 正式 GitHub Release 由本机 `make release-tag TAG=vx.y.z` 创建 Developer ID signed、notarized、stapled DMG |
 | 理由 | 本机已有 Developer ID 证书和 notarytool profile，能立即产出 Gatekeeper accepted 包；避免 tag workflow 误发未签名 zip |
 | 影响 | 推 tag 不再自动发布；正式发版必须走本地 release 脚本并记录验证结果 |
 
-## DEC-0003: 用 GitHub Actions 自动打包每次代码变更
+## DEC-0003: 用 GitHub Actions 自动打包每次代码变更（已取代）
 
 | 字段 | 内容 |
 |---|---|
 | 日期 | 2026-08-11 |
-| 状态 | 已接受 |
+| 状态 | 已由 DEC-0006 取代 |
 | 背景 | 项目需要 GitHub Release，且每次代码变更都需要自动化打包 |
 | 决策 | push / PR 运行 CI 并上传 app zip artifact；正式 release 另走 Developer ID 本地发布脚本 |
 | 理由 | 让普通变更也有可下载构建产物，同时避免把 ad-hoc CI 产物当作正式分发 |
@@ -43,7 +54,7 @@
 | 状态 | 已接受 |
 | 背景 | Spectacle 原项目已停止维护，Objective-C/Carthage 工程不适合直接延续 |
 | 决策 | 从零实现 Swift 6.2 Swift Package，核心布局逻辑拆到 `PanePilotCore` |
-| 理由 | 结构更小，便于测试和 GitHub Actions 自动构建 |
+| 理由 | 结构更小，便于测试和自动构建 |
 | 影响 | 不直接复用旧 Spectacle 代码；后续功能以 PanePilot 架构演进 |
 
 ## DEC-0001: 长期知识放在 `docs/`，入口放在 `AGENTS.md`
