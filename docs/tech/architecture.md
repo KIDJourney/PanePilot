@@ -51,7 +51,9 @@ Settings > Launch at Login
 
 ## 坐标系统
 
-Accessibility API 使用全局左上角坐标；`NSScreen` 使用 Cocoa 坐标。`AccessibilityWindowClient` 把 `NSScreen.visibleFrame` 转换成 Accessibility 坐标后传给 `LayoutEngine`，避免布局层依赖 AppKit。
+Accessibility API 使用以主显示器左上角为基准的全局坐标；`NSScreen` 使用以主显示器左下角为基准的 Cocoa 坐标。`AccessibilityWindowClient` 以 `NSScreen.screens.first.frame.maxY` 转换每块 `visibleFrame`，不能使用所有屏幕联合区域的 `maxY`，否则外接屏位于主屏上方时会整体错位。窗口归属优先选择与窗口重叠面积最大的显示器，完全脱离所有屏幕时才选择距离窗口中心最近的显示器。
+
+坐标转换和显示器选择收敛在 `PanePilotCore.DisplayGeometry`，再把纯数据传给 `LayoutEngine`，使上下排列、左右排列和不同分辨率的多显示器组合都可以用合成 frame 单测。
 
 聚焦窗口读取优先使用 `NSWorkspace.shared.frontmostApplication` 对应进程的 `AXFocusedWindow` / `AXMainWindow`。这是为新 macOS 上 system-wide `AXFocusedWindow` 可能返回 `kAXErrorCannotComplete` 的情况做的主路径修复；system-wide focused window 仅作为 fallback。
 
@@ -69,3 +71,4 @@ CI 运行在 `macos-26`，这是 GitHub hosted runners 的标准 Apple Silicon m
 2. 当前正式 release 依赖本机 Developer ID 证书和 notarytool profile；证书或 Apple 凭证失效会阻塞发布。
 3. 当前只发布 Apple Silicon DMG；如需要 Intel Mac，需要增加 x86_64 或 universal 构建策略。
 4. 真实窗口移动自动化必须在已解锁、活跃用户桌面运行；锁屏或 `loginwindow` 前台时无法验证用户窗口。
+5. 当前自动化可覆盖合成的上下排列宽外接屏坐标，但最终仍需在真实多显示器桌面确认不同 App 的窗口尺寸约束。

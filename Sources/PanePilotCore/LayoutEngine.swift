@@ -70,8 +70,7 @@ public struct LayoutEngine: Sendable {
         if let id, let display = displays.first(where: { $0.id == id }) {
             return display
         }
-        let center = CGPoint(x: window.midX, y: window.midY)
-        return displays.first(where: { $0.visibleFrame.contains(center) }) ?? displays[0]
+        return DisplayGeometry.activeDisplay(in: displays, for: window) ?? displays[0]
     }
 
     private func centered(window: CGRect, in frame: CGRect) -> CGRect {

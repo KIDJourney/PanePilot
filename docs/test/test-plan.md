@@ -16,7 +16,7 @@
 | 测试 | 覆盖范围 | 命令 |
 |---|---|---|
 | Swift build | 编译 `PanePilotCore` 和菜单栏 app | `swift build` |
-| Swift tests | `LayoutEngine` 半屏、居中、跨屏行为，以及登录项状态映射和失败保真 | `swift test` |
+| Swift tests | `LayoutEngine` 半屏、居中、跨屏行为，多显示器 Cocoa/AX 坐标转换和重叠面积选屏，以及登录项状态映射和失败保真 | `swift test` |
 | App bundle | 生成带 ICNS 的 `.app`、Info.plist 和 ad-hoc signature | `make app` |
 | Settings snapshot | 从真实 AppKit content view 渲染设置窗口，检查分组、文本和控件边界 | `PANEPILOT_SNAPSHOT_APPEARANCE=light dist/PanePilot.app/Contents/MacOS/PanePilot --automation-preferences-snapshot /tmp/panepilot-settings.png`（`dark` 覆盖深色模式） |
 | Zip package | 生成 GitHub CI artifact zip | `make package` |
@@ -41,6 +41,7 @@
 6. 状态栏使用图形图标，菜单分组和右侧快捷键列与设置窗口一致。
 7. 设置窗口在浅色/深色模式下均无溢出或控件重叠，快捷键按钮可录制并逐项清除。
 8. `Launch at Login` 能启用和关闭；待系统批准时显示正确状态并可打开“登录项”设置。
+9. 外接屏位于主屏上方、下方或侧边时，在每块屏执行 Left/Right Half，窗口宽度均为该屏可见宽度的一半。
 
 ## 回归要求
 
@@ -48,6 +49,7 @@
 
 - 修改 `LayoutEngine` 或窗口动作定义。
 - 修改 Accessibility 坐标转换。
+- 修改显示器排序、选屏或跨屏相对位置计算。
 - 修改 hotkey 注册。
 - 修改登录项注册、状态映射或设置开关。
 - 修改打包脚本或 GitHub Actions workflow。

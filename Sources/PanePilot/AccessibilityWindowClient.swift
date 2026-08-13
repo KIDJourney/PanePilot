@@ -76,17 +76,25 @@ final class AccessibilityWindowClient {
     }
 
     func displays() -> [DisplayFrame] {
-        NSScreen.screens
+        let screens = NSScreen.screens
+        guard let primaryScreenFrame = screens.first?.frame else { return [] }
+
+        return screens
             .sorted { $0.frame.minX == $1.frame.minX ? $0.frame.minY > $1.frame.minY : $0.frame.minX < $1.frame.minX }
             .enumerated()
             .map { index, screen in
-                DisplayFrame(id: screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")].map(String.init(describing:)) ?? "\(index)", visibleFrame: axFrame(fromCocoaFrame: screen.visibleFrame))
+                DisplayFrame(
+                    id: screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")].map(String.init(describing:)) ?? "\(index)",
+                    visibleFrame: DisplayGeometry.accessibilityFrame(
+                        fromCocoaFrame: screen.visibleFrame,
+                        primaryScreenFrame: primaryScreenFrame
+                    )
+                )
             }
     }
 
     func activeDisplayID(for rect: CGRect) -> String? {
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        return displays().first(where: { $0.visibleFrame.contains(center) })?.id
+        DisplayGeometry.activeDisplay(in: displays(), for: rect)?.id
     }
 
     func set(_ rect: CGRect, for window: ManagedWindow) -> Bool {
@@ -120,15 +128,5 @@ final class AccessibilityWindowClient {
         AXValueGetValue(positionRef as! AXValue, .cgPoint, &origin)
         AXValueGetValue(sizeRef as! AXValue, .cgSize, &size)
         return CGRect(origin: origin, size: size)
-    }
-
-    private func axFrame(fromCocoaFrame frame: CGRect) -> CGRect {
-        let desktop = NSScreen.screens.reduce(CGRect.null) { $0.union($1.frame) }
-        return CGRect(
-            x: frame.minX,
-            y: desktop.maxY - frame.maxY,
-            width: frame.width,
-            height: frame.height
-        )
     }
 }

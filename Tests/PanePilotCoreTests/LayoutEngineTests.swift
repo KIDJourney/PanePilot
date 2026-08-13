@@ -39,4 +39,36 @@ struct LayoutEngineTests {
 
         #expect(target?.equalTo(CGRect(x: 1690, y: 200, width: 500, height: 400)) == true)
     }
+
+    @Test func leftHalfUsesTheDisplayWithTheLargestWindowOverlap() {
+        let wideExternalAbove = DisplayFrame(
+            id: "external",
+            visibleFrame: CGRect(x: 0, y: -1416, width: 2560, height: 1416)
+        )
+        let primary = DisplayFrame(
+            id: "primary",
+            visibleFrame: CGRect(x: 0, y: 24, width: 1440, height: 876)
+        )
+
+        let target = engine.targetRect(
+            for: .leftHalf,
+            window: CGRect(x: 300, y: 200, width: 800, height: 500),
+            displays: [wideExternalAbove, primary],
+            activeDisplayID: nil
+        )
+
+        #expect(target?.equalTo(CGRect(x: 0, y: 24, width: 720, height: 876)) == true)
+    }
+
+    @Test func cocoaFramesUseThePrimaryScreenTopAsTheAccessibilityOrigin() {
+        let primaryFrame = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let externalVisibleFrame = CGRect(x: 0, y: 900, width: 2560, height: 1416)
+
+        let converted = DisplayGeometry.accessibilityFrame(
+            fromCocoaFrame: externalVisibleFrame,
+            primaryScreenFrame: primaryFrame
+        )
+
+        #expect(converted.equalTo(CGRect(x: 0, y: -1416, width: 2560, height: 1416)))
+    }
 }
