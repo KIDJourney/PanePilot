@@ -16,6 +16,12 @@ Global hotkey / Status menu
      -> PanePilotCore.LayoutEngine
         -> target CGRect
      -> AXUIElement position / size write
+
+Settings > Launch at Login
+  -> LoginItemController
+     -> SMAppService.mainApp
+     -> LoginItemStatusPolicy
+        -> enabled / disabled / requires approval / error presentation
 ```
 
 ## 模块职责
@@ -24,11 +30,13 @@ Global hotkey / Status menu
 |---|---|
 | `Sources/PanePilotCore/WindowAction.swift` | 窗口动作枚举和菜单标题 |
 | `Sources/PanePilotCore/LayoutEngine.swift` | 纯几何布局计算，可单测 |
+| `Sources/PanePilotCore/LoginItemStatusPolicy.swift` | 把系统登录项状态转换成可单测的开关、提示和操作状态 |
 | `Sources/PanePilot/main.swift` | AppKit app 入口，设置 accessory activation policy |
 | `Sources/PanePilot/AppDelegate.swift` | 图形状态栏入口、分组原生菜单、命令绑定、启动时注册快捷键 |
 | `Sources/PanePilot/HotKeyManager.swift` | Carbon `RegisterEventHotKey` 全局快捷键 |
 | `Sources/PanePilot/ShortcutStore.swift` | 用户快捷键覆盖、禁用状态和默认值合并 |
-| `Sources/PanePilot/PreferencesWindowController.swift` | 分组快捷键设置窗口、逐行录制/清除、冲突检查和截图自动化 |
+| `Sources/PanePilot/LoginItemController.swift` | 通过 `SMAppService.mainApp` 注册或注销主 App 登录项，并提供隔离的真实系统自动化入口 |
+| `Sources/PanePilot/PreferencesWindowController.swift` | 登录项开关、分组快捷键设置、逐行录制/清除、冲突检查和截图自动化 |
 | `Sources/PanePilot/AccessibilityWindowClient.swift` | Accessibility 权限、聚焦窗口读取和窗口位置写入 |
 | `Sources/PanePilot/WindowCommander.swift` | 命令编排、撤销/重做历史 |
 | `Sources/PanePilot/AutomationWindowMoveTest.swift` | 本地真实桌面窗口移动自动化入口 |
@@ -49,7 +57,7 @@ Accessibility API 使用全局左上角坐标；`NSScreen` 使用 Cocoa 坐标�
 
 ## 权限和发布
 
-PanePilot 需要 macOS Accessibility 权限才能控制其他 App 的窗口。当前本地和 CI 快速产物使用 ad-hoc signing，仅用于开发和预览。正式 GitHub Release 使用 Developer ID 签名、公证和 stapling。
+PanePilot 需要 macOS Accessibility 权限才能控制其他 App 的窗口。登录时启动使用 macOS 13+ 的 `SMAppService.mainApp`，不安装辅助程序；系统返回 `requiresApproval` 时由用户在“系统设置 > 通用 > 登录项与扩展”中批准。当前本地和 CI 快速产物使用 ad-hoc signing，仅用于开发和预览；登录项真实系统测试和正式 GitHub Release 使用 Developer ID 签名，Release 还会完成公证和 stapling。
 
 ## CI / Release
 

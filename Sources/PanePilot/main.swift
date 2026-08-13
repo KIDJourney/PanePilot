@@ -13,6 +13,13 @@ if let snapshotFlag = CommandLine.arguments.firstIndex(of: "--automation-prefere
     exit(PreferencesSnapshotAutomation.run(path: CommandLine.arguments[snapshotFlag + 1]))
 }
 
+if let loginItemFlag = CommandLine.arguments.firstIndex(of: "--automation-login-item-test") {
+    let resultPath = CommandLine.arguments.indices.contains(loginItemFlag + 1)
+        ? CommandLine.arguments[loginItemFlag + 1]
+        : nil
+    exit(LoginItemAutomation.run(resultPath: resultPath))
+}
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate

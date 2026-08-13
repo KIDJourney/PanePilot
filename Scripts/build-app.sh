@@ -59,6 +59,10 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
   <string>$VERSION</string>
+  <key>CFBundleSupportedPlatforms</key>
+  <array>
+    <string>MacOSX</string>
+  </array>
   <key>CFBundleVersion</key>
   <string>$BUILD</string>
   <key>LSMinimumSystemVersion</key>

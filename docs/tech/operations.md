@@ -10,6 +10,7 @@ swift test
 make validate-docs
 make app
 make package
+make verify-login-item
 make release-tag TAG=v0.1.1
 make verify-release TAG=v0.1.1
 make launch-release TAG=v0.1.1
@@ -30,6 +31,8 @@ VERSION=0.1.0 BUILD=1 make package
 ```text
 dist/PanePilot-v0.1.0-macos-arm64.zip
 ```
+
+`make verify-login-item` 使用隔离 bundle ID 构建 Developer ID 签名测试 App，并通过 LaunchServices 真实验证 `SMAppService.mainApp` 的注册和注销。该命令需要已解锁的用户桌面，以及本机签名目录中的 Developer ID 测试证书；测试结束会删除测试 App、登录项和临时钥匙串。
 
 ## GitHub Actions
 

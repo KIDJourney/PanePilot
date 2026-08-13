@@ -1,6 +1,7 @@
 import AppKit
 import Carbon
 import PanePilotCore
+import ServiceManagement
 
 private final class SettingsBackgroundView: NSView {
     override func draw(_ dirtyRect: NSRect) {
@@ -18,6 +19,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
 
     private let store: ShortcutStore
     private let onShortcutsChanged: () -> Void
+    private let loginItemController: LoginItemController
     private let groups: [ActionGroup] = [
         .init(title: "GENERAL", actions: [.center, .maximize]),
         .init(title: "HALVES", actions: [.leftHalf, .rightHalf, .topHalf, .bottomHalf]),
@@ -27,13 +29,21 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     ]
     private let statusLabel = NSTextField(labelWithString: "")
     private let statusDot = NSView()
+    private let launchAtLoginSwitch = NSSwitch()
+    private let launchAtLoginDescription = NSTextField(labelWithString: "")
+    private let openLoginItemsButton = NSButton(title: "Open System Settings", target: nil, action: nil)
     private var shortcutButtons: [WindowAction: NSButton] = [:]
     private var clearButtons: [WindowAction: NSButton] = [:]
     private var eventMonitor: Any?
     private var recordingAction: WindowAction?
 
-    init(store: ShortcutStore, onShortcutsChanged: @escaping () -> Void) {
+    init(
+        store: ShortcutStore,
+        loginItemController: LoginItemController = LoginItemController(),
+        onShortcutsChanged: @escaping () -> Void
+    ) {
         self.store = store
+        self.loginItemController = loginItemController
         self.onShortcutsChanged = onShortcutsChanged
 
         let window = NSWindow(
@@ -51,6 +61,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         window.delegate = self
         window.contentView = buildContentView()
         refreshRows()
+        refreshLoginItem()
     }
 
     required init?(coder: NSCoder) {
@@ -64,6 +75,10 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         stopRecording()
+    }
+
+    func windowDidBecomeKey(_ notification: Notification) {
+        refreshLoginItem()
     }
 
     func renderSnapshot(to url: URL) -> Bool {
@@ -134,7 +149,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         iconView.image = NSApp.applicationIconImage ?? NSImage(systemSymbolName: "rectangle.3.group", accessibilityDescription: "PanePilot")
         iconView.imageScaling = .scaleProportionallyUpOrDown
 
-        let titleLabel = NSTextField(labelWithString: "Keyboard Shortcuts")
+        let titleLabel = NSTextField(labelWithString: "PanePilot Settings")
         titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
 
         let textStack = NSStackView(views: [titleLabel])
@@ -173,6 +188,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         stack.edgeInsets = NSEdgeInsets(top: 18, left: 24, bottom: 20, right: 24)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
+        stack.addArrangedSubview(buildStartupGroup())
         for group in groups {
             stack.addArrangedSubview(buildGroup(group))
         }
@@ -211,6 +227,61 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
             row.widthAnchor.constraint(equalTo: section.widthAnchor).isActive = true
         }
 
+        return section
+    }
+
+    private func buildStartupGroup() -> NSView {
+        let section = NSStackView()
+        section.orientation = .vertical
+        section.alignment = .leading
+        section.spacing = 0
+
+        let title = NSTextField(labelWithString: "STARTUP")
+        title.font = .systemFont(ofSize: 11, weight: .semibold)
+        title.textColor = .secondaryLabelColor
+        section.addArrangedSubview(title)
+        section.setCustomSpacing(7, after: title)
+
+        let row = NSView()
+        let label = NSTextField(labelWithString: "Launch at Login")
+        label.font = .systemFont(ofSize: 13)
+
+        launchAtLoginSwitch.target = self
+        launchAtLoginSwitch.action = #selector(toggleLaunchAtLogin(_:))
+        launchAtLoginSwitch.toolTip = "Open PanePilot automatically when you log in"
+
+        for view in [label, launchAtLoginSwitch] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            row.addSubview(view)
+        }
+
+        NSLayoutConstraint.activate([
+            row.heightAnchor.constraint(equalToConstant: 42),
+            label.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+            label.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            launchAtLoginSwitch.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+            launchAtLoginSwitch.centerYAnchor.constraint(equalTo: row.centerYAnchor)
+        ])
+
+        launchAtLoginDescription.font = .systemFont(ofSize: 12)
+        launchAtLoginDescription.textColor = .secondaryLabelColor
+        launchAtLoginDescription.lineBreakMode = .byWordWrapping
+        launchAtLoginDescription.maximumNumberOfLines = 2
+
+        openLoginItemsButton.bezelStyle = .rounded
+        openLoginItemsButton.controlSize = .small
+        openLoginItemsButton.target = self
+        openLoginItemsButton.action = #selector(openLoginItemsSettings)
+
+        let detailRow = NSStackView(views: [launchAtLoginDescription, NSView(), openLoginItemsButton])
+        detailRow.orientation = .horizontal
+        detailRow.alignment = .centerY
+        detailRow.spacing = 12
+
+        section.addArrangedSubview(row)
+        row.widthAnchor.constraint(equalTo: section.widthAnchor).isActive = true
+        section.addArrangedSubview(detailRow)
+        detailRow.widthAnchor.constraint(equalTo: section.widthAnchor).isActive = true
         return section
     }
 
@@ -361,6 +432,16 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         applyShortcutChange(message: "Default shortcuts restored.")
     }
 
+    @objc private func toggleLaunchAtLogin(_ sender: NSSwitch) {
+        sender.isEnabled = false
+        let presentation = loginItemController.setEnabled(sender.state == .on)
+        applyLoginItemPresentation(presentation)
+    }
+
+    @objc private func openLoginItemsSettings() {
+        loginItemController.openSystemSettings()
+    }
+
     @objc private func openHelp() {
         guard let url = URL(string: "https://github.com/KIDJourney/PanePilot#quick-start") else { return }
         NSWorkspace.shared.open(url)
@@ -429,6 +510,22 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
             ? NSColor.systemGreen.cgColor
             : NSColor.systemOrange.cgColor
     }
+
+    private func refreshLoginItem() {
+        applyLoginItemPresentation(loginItemController.refresh())
+    }
+
+    private func applyLoginItemPresentation(_ presentation: LoginItemPresentation) {
+        launchAtLoginSwitch.state = presentation.isEnabled ? .on : .off
+        launchAtLoginSwitch.isEnabled = true
+        launchAtLoginDescription.stringValue = presentation.message
+        switch presentation.noticeStyle {
+        case .info: launchAtLoginDescription.textColor = .systemOrange
+        case .error: launchAtLoginDescription.textColor = .systemRed
+        case nil: launchAtLoginDescription.textColor = .secondaryLabelColor
+        }
+        openLoginItemsButton.isHidden = !presentation.canOpenSystemSettings
+    }
 }
 
 @MainActor
@@ -450,7 +547,11 @@ enum PreferencesSnapshotAutomation {
         }
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let controller = PreferencesWindowController(store: ShortcutStore(defaults: defaults)) {}
+        let loginItemController = LoginItemController(service: SnapshotLoginItemService())
+        let controller = PreferencesWindowController(
+            store: ShortcutStore(defaults: defaults),
+            loginItemController: loginItemController
+        ) {}
         if ProcessInfo.processInfo.environment["PANEPILOT_SNAPSHOT_SIZE"] == "minimum" {
             controller.window?.setContentSize(NSSize(width: 620, height: 520))
         }
@@ -467,4 +568,10 @@ enum PreferencesSnapshotAutomation {
         print("PanePilot settings snapshot written to \(path)")
         return 0
     }
+}
+
+private struct SnapshotLoginItemService: LoginItemServicing {
+    var status: SMAppService.Status { .notRegistered }
+    func register() throws {}
+    func unregister() throws {}
 }

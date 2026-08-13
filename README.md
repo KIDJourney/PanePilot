@@ -39,6 +39,8 @@ Grow, shrink, or cycle through thirds, then use Undo and Redo to move through re
 3. Grant PanePilot access in System Settings > Privacy & Security > Accessibility.
 4. Use the PanePilot icon in the menu bar or press a global shortcut.
 
+To keep PanePilot ready after every restart, open **Settings...** and enable **Launch at Login**. If macOS asks for approval, PanePilot links directly to the Login Items settings.
+
 Public releases are signed with a Developer ID certificate, notarized by Apple, and stapled before upload.
 
 ## Layouts And Shortcuts
@@ -56,7 +58,7 @@ Public releases are signed with a Developer ID certificate, notarized by Apple, 
 | Displays | Next / Previous Display | Control-Option-Command-Right / Left |
 | History | Undo / Redo | Option-Command-Z / Option-Shift-Command-Z |
 
-Open the menu bar icon and choose **Settings...** to record a different shortcut, disable one action, or restore every default. Changes take effect immediately.
+Open the menu bar icon and choose **Settings...** to launch PanePilot at login, record a different shortcut, disable one action, or restore every default. Changes take effect immediately.
 
 ## Privacy And Permissions
 

@@ -34,7 +34,9 @@
 
 ![PanePilot settings window](references/panepilot-settings.png)
 
-- 入口在状态栏菜单 `Settings...`，窗口使用 AppIcon 和 `Keyboard Shortcuts` 标题建立清晰层级。
+- 入口在状态栏菜单 `Settings...`，窗口使用 AppIcon 和 `PanePilot Settings` 标题建立清晰层级。
+- `Startup` 固定为首组，使用原生 `NSSwitch` 控制 `Launch at Login`，并在下一行解释当前系统状态。
+- macOS 要求用户批准登录项时，说明文字使用系统橙色，并显示 `Open System Settings`；更新失败使用系统红色且保留真实开关状态。
 - 动作按 General、Halves、Corners、Thirds & Sizing、Displays & History 分组，保持与状态栏菜单一致的扫描顺序。
 - 每个动作占一行：左侧是动作名，右侧是符号化快捷键录制按钮和仅图标的清除按钮。
 - 点击当前快捷键直接进入录制；录制必须包含 Command、Option、Control 或 Shift 至少一个修饰键，Escape 取消。
