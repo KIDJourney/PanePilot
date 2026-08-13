@@ -51,7 +51,9 @@ Settings > Launch at Login
 
 ## 坐标系统
 
-Accessibility API 使用以主显示器左上角为基准的全局坐标；`NSScreen` 使用以主显示器左下角为基准的 Cocoa 坐标。`AccessibilityWindowClient` 以 `NSScreen.screens.first.frame.maxY` 转换每块 `visibleFrame`，不能使用所有屏幕联合区域的 `maxY`，否则外接屏位于主屏上方时会整体错位。窗口归属优先选择与窗口重叠面积最大的显示器，完全脱离所有屏幕时才选择距离窗口中心最近的显示器。
+Accessibility API 使用以主显示器左上角为基准的全局坐标；`NSScreen` 使用以主显示器左下角为基准的 Cocoa 坐标。主显示器只作为 Cocoa 到 AX 的全局坐标转换基准，不作为窗口布局目标。`AccessibilityWindowClient` 以 `NSScreen.screens.first.frame.maxY` 转换每块 `visibleFrame`，不能使用所有屏幕联合区域的 `maxY`，否则外接屏位于主屏上方时会整体错位。
+
+Center、Half、Corner、Third 和 Sizing 的目标 frame 始终来自当前窗口实际所在的显示器：窗口归属优先选择重叠面积最大的显示器，完全脱离所有屏幕时才选择距离窗口中心最近的显示器。因此窗口在外接屏时使用外接屏的 `visibleFrame`，窗口在主屏时使用主屏的 `visibleFrame`。
 
 坐标转换和显示器选择收敛在 `PanePilotCore.DisplayGeometry`，再把纯数据传给 `LayoutEngine`，使上下排列、左右排列和不同分辨率的多显示器组合都可以用合成 frame 单测。
 

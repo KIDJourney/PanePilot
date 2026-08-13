@@ -40,7 +40,7 @@ struct LayoutEngineTests {
         #expect(target?.equalTo(CGRect(x: 1690, y: 200, width: 500, height: 400)) == true)
     }
 
-    @Test func leftHalfUsesTheDisplayWithTheLargestWindowOverlap() {
+    @Test func leftHalfUsesThePrimaryDisplayWhenTheWindowIsOnPrimary() {
         let wideExternalAbove = DisplayFrame(
             id: "external",
             visibleFrame: CGRect(x: 0, y: -1416, width: 2560, height: 1416)
@@ -58,6 +58,26 @@ struct LayoutEngineTests {
         )
 
         #expect(target?.equalTo(CGRect(x: 0, y: 24, width: 720, height: 876)) == true)
+    }
+
+    @Test func leftHalfUsesTheExternalDisplayWhenTheWindowIsOnExternal() {
+        let wideExternalAbove = DisplayFrame(
+            id: "external",
+            visibleFrame: CGRect(x: 0, y: -1416, width: 2560, height: 1416)
+        )
+        let primary = DisplayFrame(
+            id: "primary",
+            visibleFrame: CGRect(x: 0, y: 24, width: 1440, height: 876)
+        )
+
+        let target = engine.targetRect(
+            for: .leftHalf,
+            window: CGRect(x: 500, y: -1000, width: 1000, height: 700),
+            displays: [wideExternalAbove, primary],
+            activeDisplayID: nil
+        )
+
+        #expect(target?.equalTo(CGRect(x: 0, y: -1416, width: 1280, height: 1416)) == true)
     }
 
     @Test func cocoaFramesUseThePrimaryScreenTopAsTheAccessibilityOrigin() {
