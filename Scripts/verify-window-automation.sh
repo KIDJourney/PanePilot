@@ -12,8 +12,12 @@ case "$MODE" in
     APP_ARGUMENT="--automation-hotkey-test"
     READY_MESSAGE="PanePilot window move ready"
     ;;
+  recording)
+    APP_ARGUMENT="--automation-shortcut-recording-test"
+    READY_MESSAGE="PanePilot shortcut recording suspended"
+    ;;
   *)
-    echo "usage: $0 dispatch|move" >&2
+    echo "usage: $0 dispatch|move|recording" >&2
     exit 64
     ;;
 esac
@@ -59,12 +63,32 @@ if [ "$READY" != true ]; then
   exit "${APP_EXIT:-65}"
 fi
 
-if [ "$MODE" = dispatch ]; then
+if [ "$MODE" = dispatch ] || [ "$MODE" = recording ]; then
   if ! osascript -e 'tell application "System Events" to key code 123 using {option down, command down}'; then
     cat "$OUTPUT_PATH"
     echo "PanePilot automation failed: System Events could not inject Option-Command-Left." >&2
     exit 66
   fi
+fi
+
+if [ "$MODE" = recording ]; then
+  RESUMED=false
+  for _ in $(seq 1 40); do
+    if /usr/bin/grep -q "PanePilot shortcut recording resumed" "$OUTPUT_PATH"; then
+      RESUMED=true
+      break
+    fi
+    if ! kill -0 "$APP_PID" 2>/dev/null; then
+      break
+    fi
+    sleep 0.1
+  done
+  if [ "$RESUMED" != true ]; then
+    cat "$OUTPUT_PATH"
+    echo "PanePilot shortcut recording failed: automation never resumed shortcuts." >&2
+    exit 67
+  fi
+  osascript -e 'tell application "System Events" to key code 123 using {option down, command down}'
 fi
 
 APP_EXIT=0

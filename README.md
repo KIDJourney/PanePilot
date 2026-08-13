@@ -41,6 +41,8 @@ Grow, shrink, or cycle through thirds, then use Undo and Redo to move through re
 
 To keep PanePilot ready after every restart, open **Settings...** and enable **Launch at Login**. If macOS asks for approval, PanePilot links directly to the Login Items settings.
 
+PanePilot checks GitHub Releases once each day at noon while it is running. When a newer signed release is available, it asks before downloading, validating, and installing the update. You can also choose **Check for Updates...** from the menu bar at any time.
+
 Public releases are signed with a Developer ID certificate, notarized by Apple, and stapled before upload.
 
 ## Layouts And Shortcuts
@@ -58,11 +60,11 @@ Public releases are signed with a Developer ID certificate, notarized by Apple, 
 | Displays | Next / Previous Display | Control-Option-Command-Right / Left |
 | History | Undo / Redo | Option-Command-Z / Option-Shift-Command-Z |
 
-Open the menu bar icon and choose **Settings...** to launch PanePilot at login, record a different shortcut, disable one action, or restore every default. Changes take effect immediately.
+Open the menu bar icon and choose **Settings...** to launch PanePilot at login, record a different shortcut, disable one action, or restore every default. Changes take effect immediately. While a shortcut field is recording, PanePilot pauses its global shortcuts so the window under your cursor stays put.
 
 ## Privacy And Permissions
 
-PanePilot works locally and does not require an account or network connection. macOS Accessibility permission is required because arranging another app's focused window uses the system Accessibility API.
+PanePilot does not require an account. Window management and settings stay local; the daily update check connects only to the PanePilot GitHub Releases API and downloads an update only after you approve it. macOS Accessibility permission is required because arranging another app's focused window uses the system Accessibility API.
 
 ## Build From Source
 
@@ -73,7 +75,9 @@ swift build
 swift test
 make validate-docs
 make verify-hotkey-dispatch
+make verify-shortcut-recording
 make verify-window-move
+make verify-update-helper
 make package
 open dist/PanePilot.app
 ```

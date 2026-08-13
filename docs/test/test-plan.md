@@ -10,19 +10,22 @@
 4. 确认 AI Workspace 文档结构和链接持续有效。
 5. 确认全局快捷键在真实桌面中能触发并移动窗口。
 6. 确认登录项状态映射稳定，并能在隔离测试 App 中真实注册和注销。
+7. 确认更新调度、版本比较、Release 资产校验和失败回滚稳定。
 
 ## 当前覆盖
 
 | 测试 | 覆盖范围 | 命令 |
 |---|---|---|
 | Swift build | 编译 `PanePilotCore` 和菜单栏 app | `swift build` |
-| Swift tests | `LayoutEngine` 半屏、居中、跨屏行为，多显示器 Cocoa/AX 坐标转换和重叠面积选屏，以及登录项状态映射和失败保真 | `swift test` |
+| Swift tests | `LayoutEngine`、多显示器坐标和选屏、登录项状态映射，以及更新版本比较和每日中午调度 | `swift test` |
 | App bundle | 生成带 ICNS 的 `.app`、Info.plist 和 ad-hoc signature | `make app` |
 | Settings snapshot | 从真实 AppKit content view 渲染设置窗口，检查分组、文本和控件边界 | `PANEPILOT_SNAPSHOT_APPEARANCE=light dist/PanePilot.app/Contents/MacOS/PanePilot --automation-preferences-snapshot /tmp/panepilot-settings.png`（`dark` 覆盖深色模式） |
 | Zip package | 生成 GitHub CI artifact zip | `make package` |
 | Hotkey dispatch automation | 构建 release 可执行文件，由独立的 `System Events` 进程注入 `Option-Command-Left`，并断言 Carbon hotkey handler 收到动作 | `make verify-hotkey-dispatch` |
+| Shortcut recording automation | 录制期间注入快捷键并断言无动作，结束录制后再次注入并断言恢复分发 | `make verify-shortcut-recording` |
 | Window move automation | 构建 release 可执行文件和真实 AppKit 夹具窗口，执行 `WindowCommander` 并断言夹具窗口通过 AX 移动后恢复原位置 | `make verify-window-move` |
 | Login item automation | 构建隔离 bundle ID 的 Developer ID 签名测试 App，经 LaunchServices 启动，并断言 `SMAppService.mainApp` 注册和注销后的真实状态 | `make verify-login-item` |
+| Update helper automation | 用隔离的假 App 验证分阶段替换、备份与临时文件清理 | `make verify-update-helper` |
 | Signed release | 生成 Developer ID signed + notarized DMG 并上传 GitHub Release | `make release-tag TAG=vx.y.z` |
 | Release verification | 下载 GitHub Release DMG，校验 sha256、公证和 Gatekeeper | `make verify-release TAG=vx.y.z` |
 | Launch verification | 从最终 DMG 启动 App 并确认进程存活 | `make launch-release TAG=vx.y.z` |
@@ -42,16 +45,20 @@
 7. 设置窗口在浅色/深色模式下均无溢出或控件重叠，快捷键按钮可录制并逐项清除。
 8. `Launch at Login` 能启用和关闭；待系统批准时显示正确状态并可打开“登录项”设置。
 9. 外接屏位于主屏上方、下方或侧边时，在每块屏执行 Left/Right Half，窗口宽度均为该屏可见宽度的一半。
+10. 录制快捷键时按现有全局快捷键不会移动任何窗口，保存或取消后全局快捷键恢复。
+11. 设置窗口在 680 x 640 和最小 620 x 520 下，登录项说明、开关和系统设置按钮保持稳定且不重叠。
+12. 发现更新时只有用户选择 `Install Update` 才下载并替换；校验、签名、Gatekeeper 或启动失败时保留当前版本。
 
 ## 回归要求
 
-以下变化必须重新执行 `swift test`、`make verify-hotkey-dispatch`、`make verify-window-move`、`make package` 和 `make validate-docs`：
+以下变化必须重新执行 `swift test`、`make verify-hotkey-dispatch`、`make verify-shortcut-recording`、`make verify-window-move`、`make verify-update-helper`、`make package` 和 `make validate-docs`：
 
 - 修改 `LayoutEngine` 或窗口动作定义。
 - 修改 Accessibility 坐标转换。
 - 修改显示器排序、选屏或跨屏相对位置计算。
 - 修改 hotkey 注册。
 - 修改登录项注册、状态映射或设置开关。
+- 修改更新检查、下载验证或替换助手。
 - 修改打包脚本或 GitHub Actions workflow。
 - 新增、移动或删除 Markdown 文件。
 

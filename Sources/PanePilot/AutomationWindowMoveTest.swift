@@ -26,6 +26,29 @@ enum AutomationHotKeyDispatchTest {
 }
 
 @MainActor
+enum AutomationHotKeyRecordingTest {
+    static func run() -> Int32 {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.accessory)
+        app.finishLaunching()
+
+        if NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.loginwindow" {
+            print("PanePilot shortcut recording test failed: active desktop is loginwindow.")
+            return 10
+        }
+        guard let shortcut = HotKeyManager.defaultShortcuts.first(where: { $0.action == .leftHalf }) else {
+            print("PanePilot shortcut recording test failed: missing default Left Half shortcut.")
+            return 4
+        }
+
+        let run = HotKeyRecordingRun(app: app, shortcut: shortcut)
+        run.start()
+        app.run()
+        return 8
+    }
+}
+
+@MainActor
 enum AutomationWindowMoveTest {
     static func run() -> Int32 {
         let app = NSApplication.shared
@@ -50,8 +73,14 @@ enum AutomationWindowMoveTest {
         )
         fixtureWindow.title = "PanePilot Automation Fixture"
         fixtureWindow.makeKeyAndOrderFront(nil)
-        app.activate()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.25))
+        let activationDeadline = Date().addingTimeInterval(2)
+        let testActivationOptions = NSApplication.ActivationOptions(rawValue: 3)
+        while NSWorkspace.shared.frontmostApplication?.processIdentifier != getpid(),
+              Date() < activationDeadline {
+            NSRunningApplication.current.activate(options: testActivationOptions)
+            fixtureWindow.makeKeyAndOrderFront(nil)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        }
 
         guard NSWorkspace.shared.frontmostApplication?.processIdentifier == getpid() else {
             print("PanePilot automation failed: fixture app did not become frontmost.")
@@ -116,6 +145,65 @@ private final class HotKeyDispatchRun: NSObject {
         }
         if Date().timeIntervalSince(startedAt) > 5 {
             finish(6, message: "PanePilot hotkey dispatch failed: external shortcut was not delivered. actions=\(receivedActions.map(\.rawValue))")
+        }
+    }
+
+    private func finish(_ code: Int32, message: String) {
+        print(message)
+        fflush(stdout)
+        timer?.invalidate()
+        exit(code)
+    }
+}
+
+@MainActor
+private final class HotKeyRecordingRun: NSObject {
+    let app: NSApplication
+    let shortcut: KeyboardShortcut
+    let hotKeyManager = HotKeyManager()
+    var timer: Timer?
+    var receivedActions: [WindowAction] = []
+    var startedAt = Date()
+    var phase = 0
+
+    init(app: NSApplication, shortcut: KeyboardShortcut) {
+        self.app = app
+        self.shortcut = shortcut
+        super.init()
+    }
+
+    func start() {
+        hotKeyManager.actionHandler = { [weak self] action in
+            Task { @MainActor in
+                self?.receivedActions.append(action)
+            }
+        }
+        hotKeyManager.register(shortcuts: [shortcut])
+        hotKeyManager.setSuspended(true)
+        startedAt = Date()
+        print("PanePilot shortcut recording suspended: inject Option-Command-Left.")
+        fflush(stdout)
+        timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(tick(_:)), userInfo: nil, repeats: true)
+    }
+
+    @objc private func tick(_ timer: Timer) {
+        switch phase {
+        case 0 where Date().timeIntervalSince(startedAt) >= 0.75:
+            guard receivedActions.isEmpty else {
+                finish(6, message: "PanePilot shortcut recording failed: a suspended global shortcut was delivered.")
+                return
+            }
+            hotKeyManager.setSuspended(false)
+            phase = 1
+            startedAt = Date()
+            print("PanePilot shortcut recording resumed: inject Option-Command-Left.")
+            fflush(stdout)
+        case 1 where receivedActions.contains(.leftHalf):
+            finish(0, message: "PanePilot shortcut recording passed: suspended input was ignored and resumed input was delivered.")
+        case 1 where Date().timeIntervalSince(startedAt) > 5:
+            finish(7, message: "PanePilot shortcut recording failed: shortcut was not restored after recording.")
+        default:
+            break
         }
     }
 

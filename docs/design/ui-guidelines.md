@@ -36,19 +36,25 @@
 
 - 入口在状态栏菜单 `Settings...`，窗口使用 AppIcon 和 `PanePilot Settings` 标题建立清晰层级。
 - `Startup` 固定为首组，使用原生 `NSSwitch` 控制 `Launch at Login`，并在下一行解释当前系统状态。
-- macOS 要求用户批准登录项时，说明文字使用系统橙色，并显示 `Open System Settings`；更新失败使用系统红色且保留真实开关状态。
+- macOS 要求用户批准登录项时，说明文字使用系统橙色，并显示 `Open System Settings`；更新失败使用系统红色且保留真实开关状态。说明区域弹性占宽，操作按钮固定靠右且宽度稳定，窗口缩放时不漂移或覆盖文字。
 - 动作按 General、Halves、Corners、Thirds & Sizing、Displays & History 分组，保持与状态栏菜单一致的扫描顺序。
 - 每个动作占一行：左侧是动作名，右侧是符号化快捷键录制按钮和仅图标的清除按钮。
-- 点击当前快捷键直接进入录制；录制必须包含 Command、Option、Control 或 Shift 至少一个修饰键，Escape 取消。
+- 点击当前快捷键直接进入录制；录制期间暂停所有 Carbon 全局快捷键，必须包含 Command、Option、Control 或 Shift 至少一个修饰键，Escape 取消，结束后恢复注册。
 - 冲突和无修饰键输入在底部状态区反馈；清除只禁用当前动作，`Restore Defaults` 恢复全部默认值。
 - 保存后立即重新注册全局快捷键，并通过 `NSMenuItem.keyEquivalent` 刷新菜单右侧的原生快捷键列。
 
 ## PanePilot 状态栏菜单
 
 - 状态栏只显示可模板化的窗格 SF Symbol，不使用产品名文本占用菜单栏空间。
-- 顶部提供 About、Accessibility 状态和 Settings；窗口动作沿用 Spectacle 的直接菜单结构，不隐藏在多层子菜单里。
+- 顶部提供 About、Accessibility 状态、Settings 和 Check for Updates；窗口动作沿用 Spectacle 的直接菜单结构，不隐藏在多层子菜单里。
 - Center/Maximize、Halves、Corners、Thirds/Sizing、Displays、History 之间使用分隔线形成稳定分组。
 - 快捷键使用系统菜单 API 呈现，禁用快捷键时保留动作入口但不显示键位。
+
+## PanePilot 更新确认
+
+- 自动检查在每天中午触发；错过中午时，本次启动后补查一次，同一天不重复自动提醒。
+- 发现新版本时使用原生提示框显示版本号和精简 release notes，主操作是 `Install Update`，同时提供 `Later` 和 `View Release`。
+- 下载和验证期间禁用菜单中的检查命令并显示 `Checking for Updates...`；失败时保留当前版本并说明原因。
 
 ## PanePilot AppIcon
 

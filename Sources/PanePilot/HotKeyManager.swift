@@ -9,6 +9,8 @@ final class HotKeyManager {
     private var actions: [UInt32: WindowAction] = [:]
     private var nextID: UInt32 = 1
     private var eventHandler: EventHandlerRef?
+    private var registeredShortcuts: [KeyboardShortcut] = []
+    private var isSuspended = false
 
     deinit {
         for ref in hotKeyRefs.values {
@@ -22,11 +24,23 @@ final class HotKeyManager {
     }
 
     func register(shortcuts: [KeyboardShortcut]) {
+        registeredShortcuts = shortcuts
         unregisterAll()
+        guard !isSuspended else { return }
         installEventHandlerIfNeeded()
         nextID = 1
         for shortcut in shortcuts {
             register(shortcut)
+        }
+    }
+
+    func setSuspended(_ suspended: Bool) {
+        guard isSuspended != suspended else { return }
+        isSuspended = suspended
+        if suspended {
+            unregisterAll()
+        } else {
+            register(shortcuts: registeredShortcuts)
         }
     }
 

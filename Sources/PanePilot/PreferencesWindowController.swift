@@ -18,6 +18,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private let store: ShortcutStore
+    private let onRecordingChanged: (Bool) -> Void
     private let onShortcutsChanged: () -> Void
     private let loginItemController: LoginItemController
     private let groups: [ActionGroup] = [
@@ -40,10 +41,12 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     init(
         store: ShortcutStore,
         loginItemController: LoginItemController = LoginItemController(),
+        onRecordingChanged: @escaping (Bool) -> Void = { _ in },
         onShortcutsChanged: @escaping () -> Void
     ) {
         self.store = store
         self.loginItemController = loginItemController
+        self.onRecordingChanged = onRecordingChanged
         self.onShortcutsChanged = onShortcutsChanged
 
         let window = NSWindow(
@@ -273,10 +276,22 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         openLoginItemsButton.target = self
         openLoginItemsButton.action = #selector(openLoginItemsSettings)
 
-        let detailRow = NSStackView(views: [launchAtLoginDescription, NSView(), openLoginItemsButton])
-        detailRow.orientation = .horizontal
-        detailRow.alignment = .centerY
-        detailRow.spacing = 12
+        let detailRow = NSView()
+        launchAtLoginDescription.translatesAutoresizingMaskIntoConstraints = false
+        openLoginItemsButton.translatesAutoresizingMaskIntoConstraints = false
+        detailRow.addSubview(launchAtLoginDescription)
+        detailRow.addSubview(openLoginItemsButton)
+
+        NSLayoutConstraint.activate([
+            detailRow.heightAnchor.constraint(greaterThanOrEqualToConstant: 24),
+            launchAtLoginDescription.leadingAnchor.constraint(equalTo: detailRow.leadingAnchor),
+            launchAtLoginDescription.topAnchor.constraint(equalTo: detailRow.topAnchor, constant: 3),
+            launchAtLoginDescription.bottomAnchor.constraint(lessThanOrEqualTo: detailRow.bottomAnchor, constant: -3),
+            launchAtLoginDescription.trailingAnchor.constraint(lessThanOrEqualTo: openLoginItemsButton.leadingAnchor, constant: -12),
+            openLoginItemsButton.trailingAnchor.constraint(equalTo: detailRow.trailingAnchor),
+            openLoginItemsButton.topAnchor.constraint(equalTo: detailRow.topAnchor),
+            openLoginItemsButton.widthAnchor.constraint(equalToConstant: 146)
+        ])
 
         section.addArrangedSubview(row)
         row.widthAnchor.constraint(equalTo: section.widthAnchor).isActive = true
@@ -410,6 +425,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         guard let action = action(for: sender) else { return }
         stopRecording(keepMessage: true)
         recordingAction = action
+        onRecordingChanged(true)
         refreshRows()
         shortcutButtons[action]?.title = "Type shortcut..."
         statusLabel.stringValue = "Recording \(action.menuTitle). Press Escape to cancel."
@@ -484,11 +500,15 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func stopRecording(keepMessage: Bool = false) {
+        let wasRecording = recordingAction != nil
         if let eventMonitor {
             NSEvent.removeMonitor(eventMonitor)
         }
         eventMonitor = nil
         recordingAction = nil
+        if wasRecording {
+            onRecordingChanged(false)
+        }
         refreshRows(preserveStatus: keepMessage)
     }
 
@@ -571,7 +591,11 @@ enum PreferencesSnapshotAutomation {
 }
 
 private struct SnapshotLoginItemService: LoginItemServicing {
-    var status: SMAppService.Status { .notRegistered }
+    var status: SMAppService.Status {
+        ProcessInfo.processInfo.environment["PANEPILOT_SNAPSHOT_LOGIN_ITEM"] == "approval"
+            ? .requiresApproval
+            : .notRegistered
+    }
     func register() throws {}
     func unregister() throws {}
 }

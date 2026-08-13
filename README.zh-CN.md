@@ -41,6 +41,8 @@ PanePilot 是一款面向 Apple 芯片 Mac 的轻量菜单栏工具。它通过�
 
 希望每次开机后都能直接使用 PanePilot，可打开 **Settings...** 并启用 **Launch at Login**。如果 macOS 要求确认，PanePilot 会提供“登录项”系统设置的直达入口。
 
+PanePilot 运行时会在每天中午检查一次 GitHub Release。发现更新的签名版本后，会先询问是否升级；只有确认后才会下载、验证并安装。也可以随时从菜单栏选择 **Check for Updates...** 手动检查。
+
 公开发布的版本会先使用 Developer ID 证书签名，再通过 Apple 公证并完成 stapling 后上传。
 
 ## 布局与快捷键
@@ -58,11 +60,11 @@ PanePilot 是一款面向 Apple 芯片 Mac 的轻量菜单栏工具。它通过�
 | 显示器 | 下一台 / 上一台显示器 | Control-Option-Command-右 / 左方向键 |
 | 历史 | 撤销 / 重做 | Option-Command-Z / Option-Shift-Command-Z |
 
-打开菜单栏图标并选择 **Settings...**，即可设置登录时启动、录制新的快捷键、禁用单个动作或恢复全部默认值。修改会立即生效。
+打开菜单栏图标并选择 **Settings...**，即可设置登录时启动、录制新的快捷键、禁用单个动作或恢复全部默认值。修改会立即生效。录制快捷键期间，PanePilot 会暂停全局快捷键，输入不会再触发窗口移动。
 
 ## 隐私与权限
 
-PanePilot 完全在本机工作，不需要账号或网络连接。由于整理窗口需要通过 macOS Accessibility API 控制其他应用的聚焦窗口，因此必须授予辅助功能权限。
+PanePilot 不需要账号，窗口管理和设置数据都留在本机。每日更新检查只访问 PanePilot 的 GitHub Releases API，并且只在用户确认后下载新版。由于整理窗口需要通过 macOS Accessibility API 控制其他应用的聚焦窗口，因此必须授予辅助功能权限。
 
 ## 从源码构建
 
@@ -73,7 +75,9 @@ swift build
 swift test
 make validate-docs
 make verify-hotkey-dispatch
+make verify-shortcut-recording
 make verify-window-move
+make verify-update-helper
 make package
 open dist/PanePilot.app
 ```

@@ -10,6 +10,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let shortcutStore = ShortcutStore()
     private var preferencesWindowController: PreferencesWindowController?
     private var accessibilityMenuItem: NSMenuItem?
+    private var checkForUpdatesMenuItem: NSMenuItem?
+    private var updateController: UpdateController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let windowClient = AccessibilityWindowClient()
@@ -26,6 +28,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         hotKeyManager.register(shortcuts: shortcutStore.resolvedShortcuts())
 
         buildStatusMenu()
+        let updateController = UpdateController { [weak self] isChecking in
+            self?.checkForUpdatesMenuItem?.title = isChecking ? "Checking for Updates..." : "Check for Updates..."
+            self?.checkForUpdatesMenuItem?.isEnabled = !isChecking
+        }
+        self.updateController = updateController
+        updateController.start()
         commander.requestAccessibilityPermission(prompt: false)
     }
 
@@ -55,6 +63,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateAccessibilityMenuItem()
         menu.addItem(accessibilityItem)
         menu.addItem(menuItem(title: "Settings...", action: #selector(openPreferences), keyEquivalent: ",", imageName: "gearshape"))
+        let isChecking = updateController?.isChecking == true
+        let updateItem = menuItem(
+            title: isChecking ? "Checking for Updates..." : "Check for Updates...",
+            action: #selector(checkForUpdates),
+            imageName: "arrow.triangle.2.circlepath"
+        )
+        updateItem.isEnabled = !isChecking
+        checkForUpdatesMenuItem = updateItem
+        menu.addItem(updateItem)
         menu.addItem(.separator())
 
         let shortcuts = Dictionary(uniqueKeysWithValues: shortcutStore.resolvedShortcuts().map { ($0.action, $0) })
@@ -125,9 +142,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openPreferences() {
         if preferencesWindowController == nil {
-            preferencesWindowController = PreferencesWindowController(store: shortcutStore) { [weak self] in
-                self?.reloadShortcuts()
-            }
+            preferencesWindowController = PreferencesWindowController(
+                store: shortcutStore,
+                onRecordingChanged: { [weak self] isRecording in
+                    self?.hotKeyManager?.setSuspended(isRecording)
+                },
+                onShortcutsChanged: { [weak self] in
+                    self?.reloadShortcuts()
+                }
+            )
         }
         preferencesWindowController?.showWindow(nil)
         preferencesWindowController?.window?.makeKeyAndOrderFront(nil)
@@ -147,6 +170,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         commander?.perform(action)
+    }
+
+    @objc private func checkForUpdates() {
+        updateController?.checkForUpdates(userInitiated: true)
     }
 
     @objc private func quit() {

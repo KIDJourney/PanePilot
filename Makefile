@@ -1,4 +1,4 @@
-.PHONY: build test verify-hotkey-dispatch verify-window-move verify-login-item app package release release-tag verify-release launch-release validate-docs clean
+.PHONY: build test verify-hotkey-dispatch verify-shortcut-recording verify-window-move verify-login-item verify-update-helper app package release release-tag verify-release launch-release validate-docs clean
 
 build:
 	swift build
@@ -9,11 +9,17 @@ test:
 verify-hotkey-dispatch:
 	Scripts/verify-window-automation.sh dispatch
 
+verify-shortcut-recording:
+	Scripts/verify-window-automation.sh recording
+
 verify-window-move:
 	Scripts/verify-window-automation.sh move
 
 verify-login-item:
 	Scripts/verify-login-item.sh
+
+verify-update-helper:
+	Scripts/verify-update-helper.sh
 
 app:
 	Scripts/build-app.sh

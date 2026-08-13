@@ -10,6 +10,8 @@ swift test
 make validate-docs
 make app
 make package
+make verify-shortcut-recording
+make verify-update-helper
 make verify-login-item
 make release-tag TAG=v0.1.1
 make verify-release TAG=v0.1.1
@@ -33,6 +35,8 @@ dist/PanePilot-v0.1.0-macos-arm64.zip
 ```
 
 `make verify-login-item` 使用隔离 bundle ID 构建 Developer ID 签名测试 App，并通过 LaunchServices 真实验证 `SMAppService.mainApp` 的注册和注销。该命令需要已解锁的用户桌面，以及本机签名目录中的 Developer ID 测试证书；测试结束会删除测试 App、登录项和临时钥匙串。
+
+`make verify-shortcut-recording` 在真实桌面注入两次全局快捷键，验证录制期间不会分发窗口动作、退出录制后恢复分发。`make verify-update-helper` 在临时目录执行替换助手，验证新版本替换、备份和临时文件清理；正式更新链的签名、公证和 Gatekeeper 仍由 Release 验证覆盖。
 
 ## GitHub Actions
 

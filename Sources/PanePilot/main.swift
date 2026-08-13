@@ -8,6 +8,10 @@ if CommandLine.arguments.contains("--automation-hotkey-dispatch-test") {
     exit(AutomationHotKeyDispatchTest.run())
 }
 
+if CommandLine.arguments.contains("--automation-shortcut-recording-test") {
+    exit(AutomationHotKeyRecordingTest.run())
+}
+
 if let snapshotFlag = CommandLine.arguments.firstIndex(of: "--automation-preferences-snapshot"),
    CommandLine.arguments.indices.contains(snapshotFlag + 1) {
     exit(PreferencesSnapshotAutomation.run(path: CommandLine.arguments[snapshotFlag + 1]))

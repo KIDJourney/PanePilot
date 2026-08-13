@@ -22,6 +22,8 @@ ICONSET_DIR="$ROOT_DIR/.build/PanePilot.iconset"
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$BIN_DIR/$APP_NAME" "$MACOS_DIR/$APP_NAME"
+cp "$ROOT_DIR/Resources/install-update.sh" "$RESOURCES_DIR/install-update.sh"
+chmod 755 "$RESOURCES_DIR/install-update.sh"
 
 if [[ ! -f "$ICON_SOURCE" ]]; then
   echo "missing app icon source: $ICON_SOURCE" >&2
