@@ -42,6 +42,7 @@
 - 点击当前快捷键直接进入录制；录制期间暂停所有 Carbon 全局快捷键，必须包含 Command、Option、Control 或 Shift 至少一个修饰键，Escape 取消，结束后恢复注册。
 - 冲突和无修饰键输入在底部状态区反馈；清除只禁用当前动作，`Restore Defaults` 恢复全部默认值。
 - 保存后立即重新注册全局快捷键，并通过 `NSMenuItem.keyEquivalent` 刷新菜单右侧的原生快捷键列。
+- 所有可见文案跟随 macOS 首选语言，支持英文和简体中文；动作名、分组、录制状态、登录项说明和工具提示必须使用同一语言。两种语言都保持当前窗口最小尺寸下无截断或控件漂移。
 
 ## PanePilot 状态栏菜单
 
@@ -55,6 +56,7 @@
 - 自动检查在每天中午触发；错过中午时，本次启动后补查一次，同一天不重复自动提醒。
 - 发现新版本时使用原生提示框显示版本号和精简 release notes，主操作是 `Install Update`，同时提供 `Later` 和 `View Release`。
 - 下载和验证期间禁用菜单中的检查命令并显示 `Checking for Updates...`；失败时保留当前版本并说明原因。
+- 更新标题、说明和三个操作按钮跟随系统语言；GitHub Release notes 保留发布者提供的原文，不做机器翻译。
 
 ## PanePilot AppIcon
 

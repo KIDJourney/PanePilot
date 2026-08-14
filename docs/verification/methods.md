@@ -59,6 +59,10 @@
 
 如果前台是 `loginwindow`，命令应失败并提示先解锁，而不是继续尝试移动窗口。
 
+### 中英文本地化
+
+`make verify-localizations` 在打包后的 App 中检查 `en.lproj` 和 `zh-Hans.lproj`，用测试语言覆盖分别读取设置标题、Center 动作和检查更新菜单文案。设置窗口还应使用 `PANEPILOT_TEST_LANGUAGE=en|zh-Hans` 生成两种语言的真实 AppKit 快照，覆盖默认尺寸和最小尺寸，检查文字、快捷键按钮、登录项状态和页脚不重叠。
+
 ### 应用内更新
 
 `swift test` 覆盖语义版本比较和每日中午调度；`make verify-update-helper` 覆盖退出后的替换与清理。正式 Release 的 sha256、公证票据、Gatekeeper 和最终启动由 `make verify-release TAG=vx.y.z` 与 `make launch-release TAG=vx.y.z` 验证。更新失败的回滚标准是目标路径恢复旧 App，备份与 staging 不残留。

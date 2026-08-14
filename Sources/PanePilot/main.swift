@@ -18,6 +18,10 @@ if let chromeTransitionFlag = CommandLine.arguments.firstIndex(of: "--automation
     exit(AutomationChromeTransitionTest.run(processIdentifier: processIdentifier))
 }
 
+if CommandLine.arguments.contains("--automation-localization-test") {
+    exit(LocalizationAutomation.run())
+}
+
 if let snapshotFlag = CommandLine.arguments.firstIndex(of: "--automation-preferences-snapshot"),
    CommandLine.arguments.indices.contains(snapshotFlag + 1) {
     exit(PreferencesSnapshotAutomation.run(path: CommandLine.arguments[snapshotFlag + 1]))

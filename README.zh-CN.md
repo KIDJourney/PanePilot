@@ -12,6 +12,8 @@
 
 PanePilot 是一款面向 Apple 芯片 Mac 的轻量菜单栏工具。它通过全局快捷键，把当前聚焦窗口移动到半屏、角落、三分屏、其他显示器或居中位置；如果布局还需要再调整，也可以通过撤销和重做回到最近的排列状态。
 
+应用会跟随 macOS 系统语言，并为菜单、设置、权限状态和更新提示完整提供英文与简体中文。
+
 [下载最新签名版本](https://github.com/KIDJourney/PanePilot/releases/latest) | macOS 14 或更高版本 | Apple 芯片
 
 ## 适合这些场景
@@ -80,6 +82,7 @@ make verify-hotkey-dispatch
 make verify-shortcut-recording
 make verify-window-move
 make verify-chrome-transition
+make verify-localizations
 make verify-update-helper
 make package
 open dist/PanePilot.app

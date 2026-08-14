@@ -12,6 +12,7 @@ make install-hooks
 make local-check
 make app
 make package
+make verify-localizations
 make release-next
 make verify-shortcut-recording
 make verify-update-helper

@@ -67,6 +67,7 @@ swift test
 make install-hooks
 make local-check
 make package
+make verify-localizations
 make validate-docs
 tree -a -L 3 -I '.git|node_modules|dist|build' .
 rg "TODO|待确认|阻塞" docs

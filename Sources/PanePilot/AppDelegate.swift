@@ -29,7 +29,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         buildStatusMenu()
         let updateController = UpdateController { [weak self] isChecking in
-            self?.checkForUpdatesMenuItem?.title = isChecking ? "Checking for Updates..." : "Check for Updates..."
+            self?.checkForUpdatesMenuItem?.title = L10n.text(
+                isChecking ? "Checking for Updates..." : "Check for Updates..."
+            )
             self?.checkForUpdatesMenuItem?.isEnabled = !isChecking
         }
         self.updateController = updateController
@@ -52,7 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let menu = NSMenu()
         menu.autoenablesItems = false
         menu.delegate = self
-        menu.addItem(menuItem(title: "About PanePilot", action: #selector(showAbout), imageName: "info.circle"))
+        menu.addItem(menuItem(title: L10n.text("About PanePilot"), action: #selector(showAbout), imageName: "info.circle"))
 
         let accessibilityItem = menuItem(
             title: "",
@@ -62,10 +64,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         accessibilityMenuItem = accessibilityItem
         updateAccessibilityMenuItem()
         menu.addItem(accessibilityItem)
-        menu.addItem(menuItem(title: "Settings...", action: #selector(openPreferences), keyEquivalent: ",", imageName: "gearshape"))
+        menu.addItem(menuItem(title: L10n.text("Settings..."), action: #selector(openPreferences), keyEquivalent: ",", imageName: "gearshape"))
         let isChecking = updateController?.isChecking == true
         let updateItem = menuItem(
-            title: isChecking ? "Checking for Updates..." : "Check for Updates...",
+            title: L10n.text(isChecking ? "Checking for Updates..." : "Check for Updates..."),
             action: #selector(checkForUpdates),
             imageName: "arrow.triangle.2.circlepath"
         )
@@ -85,7 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
-        menu.addItem(menuItem(title: "Quit PanePilot", action: #selector(quit), keyEquivalent: "q", imageName: "power"))
+        menu.addItem(menuItem(title: L10n.text("Quit PanePilot"), action: #selector(quit), keyEquivalent: "q", imageName: "power"))
         item.menu = menu
     }
 
@@ -95,10 +97,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func updateAccessibilityMenuItem() {
         let isTrusted = AXIsProcessTrusted()
-        accessibilityMenuItem?.title = isTrusted ? "Accessibility Granted" : "Grant Accessibility Access..."
+        accessibilityMenuItem?.title = L10n.text(
+            isTrusted ? "Accessibility Granted" : "Grant Accessibility Access..."
+        )
         accessibilityMenuItem?.image = NSImage(
             systemSymbolName: isTrusted ? "checkmark.shield" : "lock.shield",
-            accessibilityDescription: isTrusted ? "Accessibility granted" : "Grant Accessibility access"
+            accessibilityDescription: L10n.text(
+                isTrusted ? "Accessibility granted" : "Grant Accessibility access"
+            )
         )
         accessibilityMenuItem?.isEnabled = !isTrusted
     }
@@ -118,7 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func actionMenuItem(_ action: WindowAction, shortcut: KeyboardShortcut?) -> NSMenuItem {
-        let item = menuItem(title: action.menuTitle, action: #selector(runMenuAction(_:)))
+        let item = menuItem(title: action.localizedMenuTitle, action: #selector(runMenuAction(_:)))
         item.representedObject = action.rawValue
         if let shortcut, let keyEquivalent = shortcut.menuKeyEquivalent {
             item.keyEquivalent = keyEquivalent
@@ -135,7 +141,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: "PanePilot",
             .applicationIcon: NSApp.applicationIconImage ?? NSImage(),
-            .credits: NSAttributedString(string: "Keyboard-first window arrangement for macOS.")
+            .credits: NSAttributedString(string: L10n.text("Keyboard-first window arrangement for macOS."))
         ])
         NSApp.activate()
     }

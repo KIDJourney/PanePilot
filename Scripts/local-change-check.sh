@@ -16,6 +16,9 @@ swift test
 echo "==> Package local preview artifact"
 make package
 
+echo "==> Verify bundled localizations"
+make verify-localizations
+
 codesign --verify --deep --strict --verbose=2 dist/PanePilot.app
 ARTIFACT="$(find dist -maxdepth 1 -name 'PanePilot-v*-local-*-macos-arm64.zip' -type f -exec stat -f '%m %N' {} + | sort -nr | head -1 | cut -d' ' -f2-)"
 test -n "$ARTIFACT"

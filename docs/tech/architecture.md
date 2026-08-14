@@ -39,6 +39,7 @@ Daily noon / Check for Updates menu
 | `Sources/PanePilotCore/LayoutEngine.swift` | 纯几何布局计算，可单测 |
 | `Sources/PanePilotCore/LoginItemStatusPolicy.swift` | 把系统登录项状态转换成可单测的开关、提示和操作状态 |
 | `Sources/PanePilotCore/UpdatePolicy.swift` | 纯版本比较和每日中午检查时间计算 |
+| `Sources/PanePilot/Localization.swift` | 从 App bundle 读取本地化文案，并为窗口动作提供展示层标题 |
 | `Sources/PanePilot/main.swift` | AppKit app 入口，设置 accessory activation policy |
 | `Sources/PanePilot/AppDelegate.swift` | 图形状态栏入口、分组原生菜单、命令绑定、启动时注册快捷键 |
 | `Sources/PanePilot/HotKeyManager.swift` | Carbon `RegisterEventHotKey` 全局快捷键，并在录制期间注销、结束后恢复 |
@@ -50,10 +51,13 @@ Daily noon / Check for Updates menu
 | `Sources/PanePilot/WindowCommander.swift` | 命令编排、撤销/重做历史 |
 | `Sources/PanePilot/AutomationWindowMoveTest.swift` | 本地真实桌面窗口移动自动化入口 |
 | `Resources/AppIcon.png` | 透明 1024 px AppIcon 源图 |
+| `Resources/en.lproj/Localizable.strings` | 英文界面资源和开发语言 fallback |
+| `Resources/zh-Hans.lproj/Localizable.strings` | 简体中文界面资源 |
 | `Resources/install-update.sh` | App 退出后同目录分阶段替换、启动新版并在失败时回滚 |
 | `Scripts/build-app.sh` | release build、从源图生成 ICNS、bundle Info.plist、ad-hoc signing |
 | `Scripts/package-app.sh` | 在本机生成 ad-hoc 预览 zip |
 | `Scripts/local-change-check.sh` | 本地提交前的文档校验、构建、测试、打包和签名检查 |
+| `Scripts/verify-localizations.sh` | 校验中英文 strings 已打进 App，并分别验证代表性菜单和设置文案 |
 | `Scripts/release-local.sh` | Developer ID 签名、公证、staple、DMG 和 GitHub Release 上传 |
 | `Scripts/release-tag.sh` | 高层正式发布入口，可复用 notary profile |
 | `Scripts/verify-release.sh` | 下载 GitHub Release DMG 并校验 sha256、公证和 Gatekeeper |
@@ -77,6 +81,8 @@ Accessibility API 没有原子设置窗口 frame 的接口，只能分别写入�
 PanePilot 需要 macOS Accessibility 权限才能控制其他 App 的窗口。登录时启动使用 macOS 13+ 的 `SMAppService.mainApp`，不安装辅助程序；系统返回 `requiresApproval` 时由用户在“系统设置 > 通用 > 登录项与扩展”中批准。更新检查只访问 `api.github.com/repos/KIDJourney/PanePilot/releases/latest` 和该 Release 的资产 URL，不上传设置或窗口数据。本地快速产物使用 ad-hoc signing，仅用于开发和预览；登录项真实系统测试和正式 GitHub Release 使用 Developer ID 签名，Release 还会完成公证和 stapling。
 
 自更新只接受版本号更高且包含精确命名 DMG/sha256 的 latest Release。安装前同时校验 sha256、DMG stapling、DMG 和 App Gatekeeper、bundle ID/版本，以及候选 App 与当前 App 的 signing identifier 和 Team ID。候选包先复制进权限为 `0700` 的临时目录并复验签名；外部助手在 App 退出后执行同目录原子替换，若新版无法启动则恢复旧版。
+
+界面本地化使用 App bundle 中标准的 `en.lproj` 和 `zh-Hans.lproj`，默认由 macOS 选择首选语言。`PanePilotCore` 的动作 raw value、快捷键持久化键和登录项状态模型不随语言变化；App 展示层通过 `L10n` 转换为本地化标题，避免切换语言破坏用户设置。`PANEPILOT_TEST_LANGUAGE` 只用于自动化选择资源，不作为用户设置入口。
 
 ## 本地自动化 / Release
 

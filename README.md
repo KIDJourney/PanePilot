@@ -12,6 +12,8 @@ Arrange macOS windows from the keyboard and keep your hands in the work.
 
 PanePilot is a lightweight menu bar utility for Apple Silicon Macs. It moves the focused window into halves, corners, thirds, displays, or a centered layout with global shortcuts. It also keeps an undo and redo history when a layout needs one more pass.
 
+The app follows your macOS language and includes English and Simplified Chinese throughout its menus, settings, permission states, and update prompts.
+
 [Download the latest signed release](https://github.com/KIDJourney/PanePilot/releases/latest) | macOS 14 or later | Apple Silicon
 
 ## When PanePilot Helps
@@ -80,6 +82,7 @@ make verify-hotkey-dispatch
 make verify-shortcut-recording
 make verify-window-move
 make verify-chrome-transition
+make verify-localizations
 make verify-update-helper
 make package
 open dist/PanePilot.app

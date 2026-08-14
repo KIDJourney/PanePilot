@@ -1,4 +1,4 @@
-.PHONY: build test local-check install-hooks verify-hotkey-dispatch verify-shortcut-recording verify-window-move verify-chrome-transition verify-login-item verify-update-helper app package release release-next release-tag verify-release launch-release validate-docs clean
+.PHONY: build test local-check install-hooks verify-hotkey-dispatch verify-shortcut-recording verify-window-move verify-chrome-transition verify-localizations verify-login-item verify-update-helper app package release release-next release-tag verify-release launch-release validate-docs clean
 
 build:
 	swift build
@@ -25,6 +25,9 @@ verify-window-move:
 
 verify-chrome-transition:
 	Scripts/verify-chrome-transition.sh
+
+verify-localizations:
+	Scripts/verify-localizations.sh
 
 verify-login-item:
 	Scripts/verify-login-item.sh

@@ -46,13 +46,13 @@ private enum UpdateError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidResponse: "GitHub returned an invalid update response."
-        case .invalidVersion(let version): "The release version is invalid: \(version)."
-        case .missingAssets: "The release is missing its DMG or checksum asset."
-        case .invalidChecksum: "The downloaded update did not match its published checksum."
-        case .readOnlyInstallation: "Move PanePilot to Applications before installing updates."
-        case .invalidBundle: "The downloaded update is not a valid PanePilot app."
-        case .signature(let reason): "The downloaded app signature is invalid. \(reason)"
+        case .invalidResponse: L10n.text("GitHub returned an invalid update response.")
+        case .invalidVersion(let version): L10n.format("The release version is invalid: %@.", version)
+        case .missingAssets: L10n.text("The release is missing its DMG or checksum asset.")
+        case .invalidChecksum: L10n.text("The downloaded update did not match its published checksum.")
+        case .readOnlyInstallation: L10n.text("Move PanePilot to Applications before installing updates.")
+        case .invalidBundle: L10n.text("The downloaded update is not a valid PanePilot app.")
+        case .signature(let reason): L10n.format("The downloaded app signature is invalid. %@", reason)
         case .command(let message): message
         }
     }
@@ -107,8 +107,8 @@ final class UpdateController {
                 guard latest > current else {
                     if userInitiated {
                         showInformation(
-                            title: "PanePilot Is Up to Date",
-                            message: "You are using the latest version (\(currentVersion))."
+                            title: L10n.text("PanePilot Is Up to Date"),
+                            message: L10n.format("You are using the latest version (%@).", currentVersion)
                         )
                     }
                     return
@@ -160,15 +160,15 @@ final class UpdateController {
     private func confirmUpdate(release: GitHubRelease) -> Bool {
         NSApp.activate()
         let alert = NSAlert()
-        alert.messageText = "PanePilot \(release.tagName) Is Available"
+        alert.messageText = L10n.format("PanePilot %@ Is Available", release.tagName)
         let notes = release.body?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         alert.informativeText = notes.isEmpty
-            ? "Install the update now?"
-            : "Install the update now?\n\n\(String(notes.prefix(700)))"
+            ? L10n.text("Install the update now?")
+            : L10n.format("Install the update now?\n\n%@", String(notes.prefix(700)))
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "Install Update")
-        alert.addButton(withTitle: "Later")
-        alert.addButton(withTitle: "View Release")
+        alert.addButton(withTitle: L10n.text("Install Update"))
+        alert.addButton(withTitle: L10n.text("Later"))
+        alert.addButton(withTitle: L10n.text("View Release"))
         let response = alert.runModal()
         if response == .alertThirdButtonReturn {
             NSWorkspace.shared.open(release.htmlURL)
@@ -271,7 +271,7 @@ final class UpdateController {
               let entities = plist["system-entities"] as? [[String: Any]],
               let path = entities.compactMap({ $0["mount-point"] as? String }).last
         else {
-            throw UpdateError.command("Could not mount the downloaded update.")
+            throw UpdateError.command(L10n.text("Could not mount the downloaded update."))
         }
         return URL(fileURLWithPath: path, isDirectory: true)
     }
@@ -287,7 +287,7 @@ final class UpdateController {
         let currentIdentity = try codeIdentity(at: currentAppURL)
         let candidateIdentity = try codeIdentity(at: candidate)
         guard currentIdentity == candidateIdentity else {
-            throw UpdateError.signature("The signing identifier or Team ID does not match the installed app.")
+            throw UpdateError.signature(L10n.text("The signing identifier or Team ID does not match the installed app."))
         }
         try run("/usr/sbin/spctl", ["-a", "-vv", "--type", "execute", candidate.path])
     }
@@ -295,11 +295,11 @@ final class UpdateController {
     private func codeIdentity(at url: URL) throws -> CodeIdentity {
         var code: SecStaticCode?
         guard SecStaticCodeCreateWithPath(url as CFURL, [], &code) == errSecSuccess, let code else {
-            throw UpdateError.signature("Code Signing Services could not open the app.")
+            throw UpdateError.signature(L10n.text("Code Signing Services could not open the app."))
         }
         let flags = SecCSFlags(rawValue: kSecCSCheckAllArchitectures | kSecCSStrictValidate | kSecCSCheckNestedCode)
         guard SecStaticCodeCheckValidity(code, flags, nil) == errSecSuccess else {
-            throw UpdateError.signature("Code Signing Services rejected the app.")
+            throw UpdateError.signature(L10n.text("Code Signing Services rejected the app."))
         }
         var information: CFDictionary?
         guard SecCodeCopySigningInformation(code, SecCSFlags(rawValue: kSecCSSigningInformation), &information) == errSecSuccess,
@@ -307,7 +307,7 @@ final class UpdateController {
               let identifier = values[kSecCodeInfoIdentifier] as? String,
               let teamIdentifier = values[kSecCodeInfoTeamIdentifier] as? String
         else {
-            throw UpdateError.signature("The signing identity is incomplete.")
+            throw UpdateError.signature(L10n.text("The signing identity is incomplete."))
         }
         return CodeIdentity(identifier: identifier, teamIdentifier: teamIdentifier)
     }
@@ -315,7 +315,7 @@ final class UpdateController {
     private func launchReplacementHelper(currentAppURL: URL, stagedAppURL: URL, temporaryRoot: URL) throws {
         let helperURL = temporaryRoot.appendingPathComponent("install-update.sh")
         guard let bundledHelperURL = Bundle.main.url(forResource: "install-update", withExtension: "sh") else {
-            throw UpdateError.command("The update installer helper is missing.")
+            throw UpdateError.command(L10n.text("The update installer helper is missing."))
         }
         try FileManager.default.copyItem(at: bundledHelperURL, to: helperURL)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: helperURL.path)
@@ -349,7 +349,9 @@ final class UpdateController {
         let errorData = error.fileHandleForReading.readDataToEndOfFile()
         guard process.terminationStatus == 0 else {
             let message = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-            throw UpdateError.command(message?.isEmpty == false ? message! : "Update verification failed.")
+            throw UpdateError.command(
+                message?.isEmpty == false ? message! : L10n.text("Update verification failed.")
+            )
         }
         return outputData
     }
@@ -360,14 +362,14 @@ final class UpdateController {
         alert.messageText = title
         alert.informativeText = message
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: L10n.text("OK"))
         alert.runModal()
     }
 
     private func showError(_ error: Error) {
         NSApp.activate()
         let alert = NSAlert(error: error)
-        alert.messageText = "PanePilot Could Not Update"
+        alert.messageText = L10n.text("PanePilot Could Not Update")
         alert.runModal()
     }
 }

@@ -23,6 +23,10 @@ rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$BIN_DIR/$APP_NAME" "$MACOS_DIR/$APP_NAME"
 cp "$ROOT_DIR/Resources/install-update.sh" "$RESOURCES_DIR/install-update.sh"
+test -f "$ROOT_DIR/Resources/en.lproj/Localizable.strings"
+test -f "$ROOT_DIR/Resources/zh-Hans.lproj/Localizable.strings"
+cp -R "$ROOT_DIR/Resources/en.lproj" "$RESOURCES_DIR/en.lproj"
+cp -R "$ROOT_DIR/Resources/zh-Hans.lproj" "$RESOURCES_DIR/zh-Hans.lproj"
 chmod 755 "$RESOURCES_DIR/install-update.sh"
 
 if [[ ! -f "$ICON_SOURCE" ]]; then
@@ -47,6 +51,11 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
 <dict>
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>zh-Hans</string>
+  </array>
   <key>CFBundleExecutable</key>
   <string>$APP_NAME</string>
   <key>CFBundleIdentifier</key>

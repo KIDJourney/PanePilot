@@ -22,17 +22,17 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     private let onShortcutsChanged: () -> Void
     private let loginItemController: LoginItemController
     private let groups: [ActionGroup] = [
-        .init(title: "GENERAL", actions: [.center, .maximize]),
-        .init(title: "HALVES", actions: [.leftHalf, .rightHalf, .topHalf, .bottomHalf]),
-        .init(title: "CORNERS", actions: [.upperLeft, .lowerLeft, .upperRight, .lowerRight]),
-        .init(title: "THIRDS & SIZING", actions: [.nextThird, .previousThird, .larger, .smaller]),
-        .init(title: "DISPLAYS & HISTORY", actions: [.nextDisplay, .previousDisplay, .undo, .redo])
+        .init(title: L10n.text("GENERAL"), actions: [.center, .maximize]),
+        .init(title: L10n.text("HALVES"), actions: [.leftHalf, .rightHalf, .topHalf, .bottomHalf]),
+        .init(title: L10n.text("CORNERS"), actions: [.upperLeft, .lowerLeft, .upperRight, .lowerRight]),
+        .init(title: L10n.text("THIRDS & SIZING"), actions: [.nextThird, .previousThird, .larger, .smaller]),
+        .init(title: L10n.text("DISPLAYS & HISTORY"), actions: [.nextDisplay, .previousDisplay, .undo, .redo])
     ]
     private let statusLabel = NSTextField(labelWithString: "")
     private let statusDot = NSView()
     private let launchAtLoginSwitch = NSSwitch()
     private let launchAtLoginDescription = NSTextField(labelWithString: "")
-    private let openLoginItemsButton = NSButton(title: "Open System Settings", target: nil, action: nil)
+    private let openLoginItemsButton = NSButton(title: L10n.text("Open System Settings"), target: nil, action: nil)
     private var shortcutButtons: [WindowAction: NSButton] = [:]
     private var clearButtons: [WindowAction: NSButton] = [:]
     private var eventMonitor: Any?
@@ -55,7 +55,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "PanePilot Settings"
+        window.title = L10n.text("PanePilot Settings")
         window.minSize = NSSize(width: 620, height: 520)
         window.isReleasedWhenClosed = false
         window.center()
@@ -152,7 +152,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         iconView.image = NSApp.applicationIconImage ?? NSImage(systemSymbolName: "rectangle.3.group", accessibilityDescription: "PanePilot")
         iconView.imageScaling = .scaleProportionallyUpOrDown
 
-        let titleLabel = NSTextField(labelWithString: "PanePilot Settings")
+        let titleLabel = NSTextField(labelWithString: L10n.text("PanePilot Settings"))
         titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
 
         let textStack = NSStackView(views: [titleLabel])
@@ -239,19 +239,19 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         section.alignment = .leading
         section.spacing = 0
 
-        let title = NSTextField(labelWithString: "STARTUP")
+        let title = NSTextField(labelWithString: L10n.text("STARTUP"))
         title.font = .systemFont(ofSize: 11, weight: .semibold)
         title.textColor = .secondaryLabelColor
         section.addArrangedSubview(title)
         section.setCustomSpacing(7, after: title)
 
         let row = NSView()
-        let label = NSTextField(labelWithString: "Launch at Login")
+        let label = NSTextField(labelWithString: L10n.text("Launch at Login"))
         label.font = .systemFont(ofSize: 13)
 
         launchAtLoginSwitch.target = self
         launchAtLoginSwitch.action = #selector(toggleLaunchAtLogin(_:))
-        launchAtLoginSwitch.toolTip = "Open PanePilot automatically when you log in"
+        launchAtLoginSwitch.toolTip = L10n.text("Open PanePilot automatically when you log in")
 
         for view in [label, launchAtLoginSwitch] {
             view.translatesAutoresizingMaskIntoConstraints = false
@@ -304,7 +304,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         let row = NSView()
         row.translatesAutoresizingMaskIntoConstraints = false
 
-        let actionLabel = NSTextField(labelWithString: action.menuTitle)
+        let actionLabel = NSTextField(labelWithString: action.localizedMenuTitle)
         actionLabel.font = .systemFont(ofSize: 13)
         actionLabel.lineBreakMode = .byTruncatingTail
 
@@ -313,11 +313,14 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         shortcutButton.controlSize = .regular
         shortcutButton.font = .monospacedSystemFont(ofSize: 13, weight: .medium)
         shortcutButton.tag = actionIndex(action)
-        shortcutButton.toolTip = "Record a shortcut for \(action.menuTitle)"
+        shortcutButton.toolTip = L10n.format("Record a shortcut for %@", action.localizedMenuTitle)
         shortcutButtons[action] = shortcutButton
 
         let clearButton = NSButton(
-            image: NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Clear \(action.menuTitle)") ?? NSImage(),
+            image: NSImage(
+                systemSymbolName: "xmark.circle.fill",
+                accessibilityDescription: L10n.format("Clear %@", action.localizedMenuTitle)
+            ) ?? NSImage(),
             target: self,
             action: #selector(clearShortcut(_:))
         )
@@ -326,7 +329,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         clearButton.imagePosition = .imageOnly
         clearButton.contentTintColor = .tertiaryLabelColor
         clearButton.tag = actionIndex(action)
-        clearButton.toolTip = "Disable the shortcut for \(action.menuTitle)"
+        clearButton.toolTip = L10n.format("Disable the shortcut for %@", action.localizedMenuTitle)
         clearButtons[action] = clearButton
 
         for view in [actionLabel, shortcutButton, clearButton] {
@@ -356,7 +359,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         let footer = NSView()
 
         let restoreButton = NSButton(
-            title: "Restore Defaults",
+            title: L10n.text("Restore Defaults"),
             image: NSImage(systemSymbolName: "arrow.counterclockwise", accessibilityDescription: nil) ?? NSImage(),
             target: self,
             action: #selector(resetShortcuts)
@@ -373,14 +376,17 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         statusLabel.lineBreakMode = .byTruncatingTail
 
         let helpButton = NSButton(
-            image: NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: "Open PanePilot help") ?? NSImage(),
+            image: NSImage(
+                systemSymbolName: "questionmark.circle",
+                accessibilityDescription: L10n.text("Open PanePilot help")
+            ) ?? NSImage(),
             target: self,
             action: #selector(openHelp)
         )
         helpButton.bezelStyle = .inline
         helpButton.isBordered = false
         helpButton.imagePosition = .imageOnly
-        helpButton.toolTip = "Open PanePilot help"
+        helpButton.toolTip = L10n.text("Open PanePilot help")
 
         for view in [restoreButton, statusDot, statusLabel, helpButton] {
             view.translatesAutoresizingMaskIntoConstraints = false
@@ -427,8 +433,11 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         recordingAction = action
         onRecordingChanged(true)
         refreshRows()
-        shortcutButtons[action]?.title = "Type shortcut..."
-        statusLabel.stringValue = "Recording \(action.menuTitle). Press Escape to cancel."
+        shortcutButtons[action]?.title = L10n.text("Type shortcut...")
+        statusLabel.stringValue = L10n.format(
+            "Recording %@. Press Escape to cancel.",
+            action.localizedMenuTitle
+        )
         statusDot.layer?.backgroundColor = NSColor.systemOrange.cgColor
 
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -440,12 +449,12 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     @objc private func clearShortcut(_ sender: NSButton) {
         guard let action = action(for: sender) else { return }
         store.clear(action)
-        applyShortcutChange(message: "\(action.menuTitle) is disabled.")
+        applyShortcutChange(message: L10n.format("%@ is disabled.", action.localizedMenuTitle))
     }
 
     @objc private func resetShortcuts() {
         store.reset()
-        applyShortcutChange(message: "Default shortcuts restored.")
+        applyShortcutChange(message: L10n.text("Default shortcuts restored."))
     }
 
     @objc private func toggleLaunchAtLogin(_ sender: NSSwitch) {
@@ -459,7 +468,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     }
 
     @objc private func openHelp() {
-        guard let url = URL(string: "https://github.com/KIDJourney/PanePilot#quick-start") else { return }
+        guard let url = URL(string: L10n.text("PanePilot Help URL")) else { return }
         NSWorkspace.shared.open(url)
     }
 
@@ -471,7 +480,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         }
         guard let shortcut = KeyboardShortcut(action: action, event: event) else {
             NSSound.beep()
-            statusLabel.stringValue = "Use Command, Option, Control, or Shift in the shortcut."
+            statusLabel.stringValue = L10n.text("Use Command, Option, Control, or Shift in the shortcut.")
             stopRecording(keepMessage: true)
             statusDot.layer?.backgroundColor = NSColor.systemRed.cgColor
             return
@@ -483,13 +492,19 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
                 } == true
         }) {
             NSSound.beep()
-            statusLabel.stringValue = "\(shortcut.symbolicLabel) is already used by \(conflict.menuTitle)."
+            statusLabel.stringValue = L10n.format(
+                "%@ is already used by %@.",
+                shortcut.symbolicLabel,
+                conflict.localizedMenuTitle
+            )
             stopRecording(keepMessage: true)
             statusDot.layer?.backgroundColor = NSColor.systemRed.cgColor
             return
         }
         store.set(shortcut, for: action)
-        applyShortcutChange(message: "\(action.menuTitle) is now \(shortcut.symbolicLabel).")
+        applyShortcutChange(
+            message: L10n.format("%@ is now %@.", action.localizedMenuTitle, shortcut.symbolicLabel)
+        )
     }
 
     private func applyShortcutChange(message: String) {
@@ -515,7 +530,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     private func refreshRows(preserveStatus: Bool = false) {
         for action in WindowAction.menuOrder {
             let shortcut = store.shortcut(for: action)
-            shortcutButtons[action]?.title = shortcut?.symbolicLabel ?? "Set Shortcut"
+            shortcutButtons[action]?.title = shortcut?.symbolicLabel ?? L10n.text("Set Shortcut")
             shortcutButtons[action]?.contentTintColor = shortcut == nil ? .secondaryLabelColor : .controlTextColor
             clearButtons[action]?.isEnabled = shortcut != nil
         }
@@ -523,8 +538,12 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
         if !preserveStatus {
             let activeCount = store.resolvedShortcuts().count
             statusLabel.stringValue = activeCount == WindowAction.menuOrder.count
-                ? "All shortcuts are active"
-                : "\(activeCount) of \(WindowAction.menuOrder.count) shortcuts active"
+                ? L10n.text("All shortcuts are active")
+                : L10n.format(
+                    "%ld of %ld shortcuts active",
+                    activeCount,
+                    WindowAction.menuOrder.count
+                )
         }
         statusDot.layer?.backgroundColor = recordingAction == nil
             ? NSColor.systemGreen.cgColor
@@ -538,7 +557,7 @@ final class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     private func applyLoginItemPresentation(_ presentation: LoginItemPresentation) {
         launchAtLoginSwitch.state = presentation.isEnabled ? .on : .off
         launchAtLoginSwitch.isEnabled = true
-        launchAtLoginDescription.stringValue = presentation.message
+        launchAtLoginDescription.stringValue = L10n.text(presentation.message)
         switch presentation.noticeStyle {
         case .info: launchAtLoginDescription.textColor = .systemOrange
         case .error: launchAtLoginDescription.textColor = .systemRed
