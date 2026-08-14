@@ -1,4 +1,4 @@
-.PHONY: build test local-check install-hooks verify-hotkey-dispatch verify-shortcut-recording verify-window-move verify-chrome-transition verify-login-item verify-update-helper app package release release-tag verify-release launch-release validate-docs clean
+.PHONY: build test local-check install-hooks verify-hotkey-dispatch verify-shortcut-recording verify-window-move verify-chrome-transition verify-login-item verify-update-helper app package release release-next release-tag verify-release launch-release validate-docs clean
 
 build:
 	swift build
@@ -11,7 +11,7 @@ local-check:
 
 install-hooks:
 	git config core.hooksPath .githooks
-	chmod +x .githooks/pre-commit Scripts/local-change-check.sh
+	chmod +x .githooks/pre-commit .githooks/post-commit .githooks/pre-push Scripts/local-change-check.sh Scripts/release-if-needed.sh Scripts/verify-release-gate.sh
 	@echo "Local git hooks installed."
 
 verify-hotkey-dispatch:
@@ -41,6 +41,9 @@ package:
 release:
 	@test -n "$(TAG)" || (echo "usage: make release TAG=v0.1.1" >&2; exit 1)
 	@Scripts/release-local.sh "$(TAG)"
+
+release-next:
+	@Scripts/release-if-needed.sh
 
 release-tag:
 	@test -n "$(TAG)" || (echo "usage: make release-tag TAG=v0.1.1" >&2; exit 1)

@@ -32,6 +32,7 @@
 | Launch verification | 从最终 DMG 启动 App 并确认进程存活 | `make launch-release TAG=vx.y.z` |
 | 文档结构检查 | 根目录入口、关键目录、Markdown 链接 | `make validate-docs` |
 | Local commit gate | commit 前自动运行文档验证、构建、测试、打包和签名检查 | `make install-hooks`、`make local-check` |
+| Mandatory release hooks | code commit 后自动发布下一个 patch；推送 main 前验证 commit、远端 tag、DMG 和 sha256 Release 资产一致 | `PANEPILOT_AUTO_RELEASE_DRY_RUN=1 make release-next`、`Scripts/verify-release-gate.sh <remote-sha> <local-sha>` |
 
 ## 手工验收
 

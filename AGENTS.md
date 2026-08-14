@@ -77,7 +77,7 @@ rg "TODO|待确认|阻塞" docs
 - 禁止使用 GitHub Actions 或其他 GitHub 托管能力执行构建、测试、打包、签名或公证；这些步骤全部在本机完成。
 - 首次 clone 后运行 `make install-hooks`。每次 commit 前，本地 hook 必须通过文档校验、build、test 和 ad-hoc zip 打包；`dist/` 产物不提交到 git。
 - GitHub 只托管源码、tag 和已在本机完成并验证的正式 Release 资产。
-- 任务明确要求“发布”或“Release”时，必须按 `docs/tech/operations.md` 依次执行 `make release-tag TAG=vx.y.z`、`make verify-release TAG=vx.y.z` 和 `make launch-release TAG=vx.y.z`。
+- `main` 上任何影响 App、测试、资源、构建或发布工具的 commit 都必须发布下一个 patch Release；`.githooks/post-commit` 自动在本机完成 Developer ID 签名、公证、上传、下载校验和启动验证，`.githooks/pre-push` 禁止未对应正式 Release 的代码提交推送到远端 `main`。纯文档变更不触发 Release。
 - 只有远端 tag 与目标 commit 一致、`gh release view` 可见正式 DMG 和 sha256、下载校验与最终 DMG 启动验证全部通过后，才可以报告 Release 已完成。
 
 ## Git 规则

@@ -60,7 +60,13 @@ if git rev-parse "$TAG" >/dev/null 2>&1; then
     release_dir="$WORKTREE_DIR"
   fi
 else
-  [ -z "$(git status --porcelain)" ] || fail "working tree must be clean to create a new release tag"
+  if [ -n "$(git status --porcelain)" ]; then
+    WORKTREE_DIR="$(mktemp -d "/tmp/panepilot-release-$TAG.XXXXXX")"
+    rmdir "$WORKTREE_DIR"
+    log "Create clean temporary worktree for $TAG"
+    git worktree add --detach "$WORKTREE_DIR" HEAD
+    release_dir="$WORKTREE_DIR"
+  fi
 fi
 
 log "Run local release for $TAG"

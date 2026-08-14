@@ -12,6 +12,7 @@ make install-hooks
 make local-check
 make app
 make package
+make release-next
 make verify-shortcut-recording
 make verify-update-helper
 make verify-login-item
@@ -49,11 +50,14 @@ make install-hooks
 make local-check
 ```
 
-`make install-hooks` 将仓库的 `core.hooksPath` 设为 `.githooks`。之后每次 `git commit` 都会先执行 `Scripts/local-change-check.sh`：文档验证、Swift build、Swift tests、ad-hoc app/zip 打包，以及最终 app 签名检查。预览产物留在 `dist/`，不提交到 git，也不上传 GitHub artifact。
+`make install-hooks` 将仓库的 `core.hooksPath` 设为 `.githooks`。之后每次 `git commit` 都会先执行 `Scripts/local-change-check.sh`：文档验证、Swift build、Swift tests、ad-hoc app/zip 打包，以及最终 app 签名检查。commit 完成后，`post-commit` 会检查 `Package.swift`、`Makefile`、`Sources/`、`Resources/`、`Scripts/`、`Tests/` 和 `.githooks/`；这些路径有变化时自动递增 patch 版本，并在本机执行正式 Release。纯文档变更跳过发布。预览产物留在 `dist/`，不提交到 git，也不上传 GitHub artifact。
+
+推送 `main` 前，`pre-push` 会定位本次待推送范围内最后一个影响发布的 commit，并要求远端已有指向该 commit 的版本 tag，以及包含 DMG 和 sha256 的非草稿 GitHub Release。条件不满足时 push 失败，并提示先运行 `make release-next`。因此 post-commit 即使因钥匙串、网络或 Apple 公证暂时失败，也不会把未发布代码推进主线。
 
 ## 发布
 
 ```bash
+make release-next
 make release-tag TAG=v0.1.1
 make verify-release TAG=v0.1.1
 make launch-release TAG=v0.1.1

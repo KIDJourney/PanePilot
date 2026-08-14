@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+
+while read -r LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
+  if [ "$REMOTE_REF" = "refs/heads/main" ]; then
+    "$ROOT_DIR/Scripts/verify-release-gate.sh" "$REMOTE_SHA" "$LOCAL_SHA"
+  fi
+done
