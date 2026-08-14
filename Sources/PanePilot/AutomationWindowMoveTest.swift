@@ -111,6 +111,110 @@ enum AutomationWindowMoveTest {
 }
 
 @MainActor
+enum AutomationChromeTransitionTest {
+    static func run(processIdentifier: pid_t) -> Int32 {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.accessory)
+        app.finishLaunching()
+
+        let client = AccessibilityWindowClient()
+        guard client.isTrusted(prompt: false) else {
+            print("PanePilot Chrome transition failed: Accessibility permission is not granted for this executable.")
+            return 2
+        }
+        guard let window = waitForWindow(processIdentifier: processIdentifier, client: client) else {
+            print("PanePilot Chrome transition failed: Chrome test window was not available through Accessibility.")
+            return 3
+        }
+        guard let displayID = client.activeDisplayID(for: window.rect) else {
+            print("PanePilot Chrome transition failed: could not identify the Chrome window display.")
+            return 4
+        }
+
+        let layoutEngine = LayoutEngine()
+        let displays = client.displays()
+        guard
+            let maximized = layoutEngine.targetRect(for: .maximize, window: window.rect, displays: displays, activeDisplayID: displayID),
+            let leftHalf = layoutEngine.targetRect(for: .leftHalf, window: window.rect, displays: displays, activeDisplayID: displayID),
+            let rightHalf = layoutEngine.targetRect(for: .rightHalf, window: window.rect, displays: displays, activeDisplayID: displayID)
+        else {
+            print("PanePilot Chrome transition failed: could not compute target frames.")
+            return 5
+        }
+
+        let originalRect = window.rect
+        defer { _ = client.set(originalRect, for: window) }
+
+        guard client.set(maximized, for: window), waitForRect(maximized, window: window, client: client) else {
+            print("PanePilot Chrome transition failed: test window did not maximize.")
+            return 6
+        }
+        guard client.set(rightHalf, for: window) else {
+            print("PanePilot Chrome transition failed: Right Half AX writes failed.")
+            return 7
+        }
+
+        var observedLeftHalf = false
+        var observedFrames: [CGRect] = []
+        let deadline = Date().addingTimeInterval(1)
+        while Date() < deadline {
+            if let rect = client.rect(for: window) {
+                if observedFrames.last?.isApproximatelyEqual(to: rect, tolerance: 1) != true {
+                    observedFrames.append(rect)
+                }
+                observedLeftHalf = observedLeftHalf || rect.isApproximatelyEqual(to: leftHalf, tolerance: 3)
+                if rect.isApproximatelyEqual(to: rightHalf, tolerance: 3) {
+                    break
+                }
+            }
+            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+        }
+
+        let frameSummary = observedFrames.map(\.debugDescription).joined(separator: " -> ")
+        guard client.rect(for: window)?.isApproximatelyEqual(to: rightHalf, tolerance: 3) == true else {
+            print("PanePilot Chrome transition failed: final frame was not Right Half. frames=\(frameSummary)")
+            return 8
+        }
+        guard !observedLeftHalf else {
+            print("PanePilot Chrome transition failed: window passed through Left Half. frames=\(frameSummary)")
+            return 9
+        }
+
+        print("PanePilot Chrome transition passed: maximized window moved directly to Right Half. frames=\(frameSummary)")
+        return 0
+    }
+
+    private static func waitForWindow(
+        processIdentifier: pid_t,
+        client: AccessibilityWindowClient
+    ) -> ManagedWindow? {
+        let deadline = Date().addingTimeInterval(8)
+        repeat {
+            if let window = client.window(forProcessIdentifier: processIdentifier) {
+                return window
+            }
+            RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        } while Date() < deadline
+        return nil
+    }
+
+    private static func waitForRect(
+        _ expected: CGRect,
+        window: ManagedWindow,
+        client: AccessibilityWindowClient
+    ) -> Bool {
+        let deadline = Date().addingTimeInterval(2)
+        repeat {
+            if client.rect(for: window)?.isApproximatelyEqual(to: expected, tolerance: 3) == true {
+                return true
+            }
+            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        } while Date() < deadline
+        return false
+    }
+}
+
+@MainActor
 private final class HotKeyDispatchRun: NSObject {
     let app: NSApplication
     let shortcut: KeyboardShortcut

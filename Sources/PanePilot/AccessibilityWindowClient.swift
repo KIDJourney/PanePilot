@@ -106,9 +106,54 @@ final class AccessibilityWindowClient {
         else {
             return false
         }
-        let positionStatus = AXUIElementSetAttributeValue(window.element, kAXPositionAttribute as CFString, position)
-        let sizeStatus = AXUIElementSetAttributeValue(window.element, kAXSizeAttribute as CFString, axSize)
-        return positionStatus == .success && sizeStatus == .success
+
+        return withEnhancedUserInterfaceDisabled(for: window.element) {
+            var succeeded = true
+            for attribute in WindowFrameWritePlan.constrainedApplicationOrder {
+                let status = switch attribute {
+                case .size:
+                    AXUIElementSetAttributeValue(
+                        window.element,
+                        kAXSizeAttribute as CFString,
+                        axSize
+                    )
+                case .position:
+                    AXUIElementSetAttributeValue(
+                        window.element,
+                        kAXPositionAttribute as CFString,
+                        position
+                    )
+                }
+                succeeded = status == .success && succeeded
+            }
+            return succeeded
+        }
+    }
+
+    private func withEnhancedUserInterfaceDisabled<T>(
+        for window: AXUIElement,
+        operation: () -> T
+    ) -> T {
+        var processIdentifier: pid_t = 0
+        guard AXUIElementGetPid(window, &processIdentifier) == .success else {
+            return operation()
+        }
+
+        let application = AXUIElementCreateApplication(processIdentifier)
+        let attribute = "AXEnhancedUserInterface" as CFString
+        var value: CFTypeRef?
+        let wasEnabled = AXUIElementCopyAttributeValue(application, attribute, &value) == .success
+            && value as? Bool == true
+
+        if wasEnabled {
+            AXUIElementSetAttributeValue(application, attribute, kCFBooleanFalse)
+        }
+        defer {
+            if wasEnabled {
+                AXUIElementSetAttributeValue(application, attribute, kCFBooleanTrue)
+            }
+        }
+        return operation()
     }
 
     private func rect(for element: AXUIElement) -> CGRect? {

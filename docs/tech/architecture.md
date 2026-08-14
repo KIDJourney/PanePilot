@@ -70,6 +70,8 @@ Center、Half、Corner、Third 和 Sizing 的目标 frame 始终来自当前窗�
 
 聚焦窗口读取优先使用 `NSWorkspace.shared.frontmostApplication` 对应进程的 `AXFocusedWindow` / `AXMainWindow`。这是为新 macOS 上 system-wide `AXFocusedWindow` 可能返回 `kAXErrorCannotComplete` 的情况做的主路径修复；system-wide focused window 仅作为 fallback。
 
+Accessibility API 没有原子设置窗口 frame 的接口，只能分别写入尺寸和位置。PanePilot 按 `AXSize -> AXPosition -> AXSize` 写入目标 frame：先缩放以解除 Chrome 等应用在最大化尺寸下对横向移动的钳制，再移动，最后重申目标尺寸。若目标应用启用了 `AXEnhancedUserInterface`，写入期间会临时关闭并在结束后恢复，减少应用延迟处理多个 AX 变更造成的可见中间态。
+
 ## 权限和发布
 
 PanePilot 需要 macOS Accessibility 权限才能控制其他 App 的窗口。登录时启动使用 macOS 13+ 的 `SMAppService.mainApp`，不安装辅助程序；系统返回 `requiresApproval` 时由用户在“系统设置 > 通用 > 登录项与扩展”中批准。更新检查只访问 `api.github.com/repos/KIDJourney/PanePilot/releases/latest` 和该 Release 的资产 URL，不上传设置或窗口数据。本地快速产物使用 ad-hoc signing，仅用于开发和预览；登录项真实系统测试和正式 GitHub Release 使用 Developer ID 签名，Release 还会完成公证和 stapling。

@@ -24,6 +24,7 @@
 | Hotkey dispatch automation | 构建 release 可执行文件，由独立的 `System Events` 进程注入 `Option-Command-Left`，并断言 Carbon hotkey handler 收到动作 | `make verify-hotkey-dispatch` |
 | Shortcut recording automation | 录制期间注入快捷键并断言无动作，结束录制后再次注入并断言恢复分发 | `make verify-shortcut-recording` |
 | Window move automation | 构建 release 可执行文件和真实 AppKit 夹具窗口，执行 `WindowCommander` 并断言夹具窗口通过 AX 移动后恢复原位置 | `make verify-window-move` |
+| Chrome transition automation | 启动使用临时 profile 的隔离 Chrome，先最大化再移动到右半屏，断言最终落点且命令返回后未出现左半屏 frame | `make verify-chrome-transition` |
 | Login item automation | 构建隔离 bundle ID 的 Developer ID 签名测试 App，经 LaunchServices 启动，并断言 `SMAppService.mainApp` 注册和注销后的真实状态 | `make verify-login-item` |
 | Update helper automation | 用隔离的假 App 验证分阶段替换、备份与临时文件清理 | `make verify-update-helper` |
 | Signed release | 生成 Developer ID signed + notarized DMG 并上传 GitHub Release | `make release-tag TAG=vx.y.z` |
@@ -48,6 +49,7 @@
 10. 录制快捷键时按现有全局快捷键不会移动任何窗口，保存或取消后全局快捷键恢复。
 11. 设置窗口在 680 x 640 和最小 620 x 520 下，登录项说明、开关和系统设置按钮保持稳定且不重叠。
 12. 发现更新时只有用户选择 `Install Update` 才下载并替换；校验、签名、Gatekeeper 或启动失败时保留当前版本。
+13. Chrome 窗口在 Maximize 后执行 Right Half 时直接稳定到右半屏，不出现可见的左半屏中间态。
 
 ## 回归要求
 
@@ -55,6 +57,7 @@
 
 - 修改 `LayoutEngine` 或窗口动作定义。
 - 修改 Accessibility 坐标转换。
+- 修改 Accessibility 窗口 frame 写入顺序或应用级 AX 状态处理。
 - 修改显示器排序、选屏或跨屏相对位置计算。
 - 修改 hotkey 注册。
 - 修改登录项注册、状态映射或设置开关。

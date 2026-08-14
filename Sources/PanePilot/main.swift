@@ -12,6 +12,12 @@ if CommandLine.arguments.contains("--automation-shortcut-recording-test") {
     exit(AutomationHotKeyRecordingTest.run())
 }
 
+if let chromeTransitionFlag = CommandLine.arguments.firstIndex(of: "--automation-chrome-transition-test"),
+   CommandLine.arguments.indices.contains(chromeTransitionFlag + 1),
+   let processIdentifier = pid_t(CommandLine.arguments[chromeTransitionFlag + 1]) {
+    exit(AutomationChromeTransitionTest.run(processIdentifier: processIdentifier))
+}
+
 if let snapshotFlag = CommandLine.arguments.firstIndex(of: "--automation-preferences-snapshot"),
    CommandLine.arguments.indices.contains(snapshotFlag + 1) {
     exit(PreferencesSnapshotAutomation.run(path: CommandLine.arguments[snapshotFlag + 1]))

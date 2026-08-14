@@ -79,6 +79,7 @@ make local-check
 make verify-hotkey-dispatch
 make verify-shortcut-recording
 make verify-window-move
+make verify-chrome-transition
 make verify-update-helper
 make package
 open dist/PanePilot.app
